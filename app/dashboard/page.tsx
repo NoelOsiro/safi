@@ -60,7 +60,10 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+        <Loader2 
+          data-testid="loading-spinner"
+          className="h-8 w-8 animate-spin text-emerald-600" 
+        />
       </div>
     )
   }
@@ -138,6 +141,7 @@ export default function DashboardPage() {
             {modules.map((module) => (
               <Card 
                 key={module.id}
+                data-testid="module-card"
                 className="hover:shadow-md transition-shadow group overflow-hidden p-6 cursor-pointer"
                 onClick={() => window.location.href = `/training/modules/${module.id}`}
               >

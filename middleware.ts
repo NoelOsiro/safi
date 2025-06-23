@@ -9,6 +9,7 @@ const protectedRoutes = [
   '/assessment',
   '/chat',
   '/onboarding',
+  '/training/*',
   // Add other protected routes here
 ]
 

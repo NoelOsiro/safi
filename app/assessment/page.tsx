@@ -96,19 +96,26 @@ export default function AssessmentPage() {
 
   const renderPhotoStep = () => (
     <div className="space-y-6">
-      {currentStepData.questions.map((question) => (
-        <Card
-          key={question.id}
-          className="border-dashed border-2 border-gray-300 hover:border-green-400 transition-colors"
-        >
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center">
-              <Camera className="h-5 w-5 mr-2 text-green-600" />
-              {question.label}
-              {question.required && (
-                <Badge variant="destructive" className="ml-2">
-                  Required
-                </Badge>
+      {currentStepData.questions
+        .filter((question): question is { id: string; label: string; required: boolean } => 
+          typeof question === 'object' && 
+          'id' in question && 
+          'label' in question && 
+          'required' in question
+        )
+        .map((question) => (
+          <Card
+            key={question.id}
+            className="border-dashed border-2 border-gray-300 hover:border-green-400 transition-colors"
+          >
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <Camera className="h-5 w-5 mr-2 text-green-600" />
+                {question.label}
+                {question.required && (
+                  <Badge variant="destructive" className="ml-2">
+                    Required
+                  </Badge>
               )}
             </CardTitle>
           </CardHeader>
@@ -139,34 +146,46 @@ export default function AssessmentPage() {
     </div>
   )
 
-  const renderQuizStep = () => (
-    <div className="space-y-6">
-      {currentStepData.questions.map((question, index) => (
-        <Card key={question.id}>
-          <CardHeader>
-            <CardTitle className="text-lg">
-              Question {index + 1}: {question.question}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RadioGroup
-              value={answers[question.id] || ""}
-              onValueChange={(value) => handleAnswerChange(question.id, value)}
-            >
-              {question.options?.map((option, optionIndex) => (
-                <div key={optionIndex} className="flex items-center space-x-2">
-                  <RadioGroupItem value={option} id={`${question.id}-${optionIndex}`} />
-                  <Label htmlFor={`${question.id}-${optionIndex}`} className="flex-1 cursor-pointer">
-                    {option}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  )
+  const renderQuizStep = () => {
+    // Ensure we only render this for quiz steps
+    if (currentStepData.type !== 'quiz') return null;
+    
+    // Type assertion to let TypeScript know these are quiz questions
+    const quizQuestions = currentStepData.questions as Array<{
+      id: string;
+      question: string;
+      options: string[];
+    }>;
+
+    return (
+      <div className="space-y-6">
+        {quizQuestions.map((question, index) => (
+          <Card key={question.id}>
+            <CardHeader>
+              <CardTitle className="text-lg">
+                Question {index + 1}: {question.question}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RadioGroup
+                value={answers[question.id] || ""}
+                onValueChange={(value) => handleAnswerChange(question.id, value)}
+              >
+                {question.options?.map((option, optionIndex) => (
+                  <div key={optionIndex} className="flex items-center space-x-2">
+                    <RadioGroupItem value={option} id={`${question.id}-${optionIndex}`} />
+                    <Label htmlFor={`${question.id}-${optionIndex}`} className="flex-1 cursor-pointer">
+                      {option}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
 
   const renderChecklistStep = () => (
     <div className="space-y-4">
@@ -176,19 +195,28 @@ export default function AssessmentPage() {
           <CardDescription>Check all practices that apply to your current food handling routine</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {currentStepData.questions.map((item, index) => (
-            <div key={index} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-              <input
-                type="checkbox"
-                id={`checklist-${index}`}
-                className="h-4 w-4 text-green-600 rounded border-gray-300"
-                onChange={(e) => handleAnswerChange(`checklist-${index}`, e.target.checked.toString())}
-              />
-              <Label htmlFor={`checklist-${index}`} className="flex-1 cursor-pointer">
-                {item}
-              </Label>
-            </div>
-          ))}
+          {currentStepData.questions.map((item, index) => {
+            // Handle different question item structures
+            const displayText = typeof item === 'string' 
+              ? item 
+              : 'label' in item 
+                ? item.label 
+                : item.question;
+                
+            return (
+              <div key={index} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                <input
+                  type="checkbox"
+                  id={`checklist-${index}`}
+                  className="h-4 w-4 text-green-600 rounded border-gray-300"
+                  onChange={(e) => handleAnswerChange(`checklist-${index}`, e.target.checked.toString())}
+                />
+                <Label htmlFor={`checklist-${index}`} className="flex-1 cursor-pointer">
+                  {displayText}
+                </Label>
+              </div>
+            );
+          })}
         </CardContent>
       </Card>
     </div>

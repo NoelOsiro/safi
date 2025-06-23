@@ -59,7 +59,10 @@ export default function TrainingPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+        <Loader2 
+          data-testid="loading-spinner"
+          className="h-8 w-8 animate-spin text-emerald-600" 
+        />
       </div>
     )
   }
@@ -125,20 +128,20 @@ export default function TrainingPage() {
         <Card className="bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow duration-300">
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
+              <div className="text-center" data-testid="modules-completed">
                 <p className="text-sm font-medium text-slate-500">Modules Completed</p>
                 <p className="text-3xl font-bold text-emerald-600 mt-2">2/5</p>
-                <Progress value={40} className="h-2 mt-2" />
+                <Progress value={40} className="h-2 mt-2" data-testid="modules-completed-progress" />
               </div>
-              <div className="text-center">
+              <div className="text-center" data-testid="overall-progress">
                 <p className="text-sm font-medium text-slate-500">Overall Progress</p>
                 <p className="text-3xl font-bold text-blue-600 mt-2">52%</p>
-                <Progress value={52} className="h-2 mt-2" />
+                <Progress value={52} className="h-2 mt-2" data-testid="overall-progress-bar" />
               </div>
-              <div className="text-center">
+              <div className="text-center" data-testid="certification-ready">
                 <p className="text-sm font-medium text-slate-500">Certification Ready</p>
                 <p className="text-3xl font-bold text-amber-600 mt-2">75%</p>
-                <Progress value={75} className="h-2 mt-2" />
+                <Progress value={75} className="h-2 mt-2" data-testid="certification-progress" />
               </div>
             </div>
           </CardContent>

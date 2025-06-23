@@ -65,10 +65,6 @@ export default function ModulePage() {
 
   useEffect(() => {
     // Check authentication and onboarding status
-    if (!isAuthenticated) {
-      router.push("/auth/signup")
-      return
-    }
 
     if (needsOnboarding) {
       router.push("/onboarding")
