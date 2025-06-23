@@ -1,60 +1,81 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { ArrowLeft, BookOpen, CheckCircle, Clock, Award, TrendingUp } from "lucide-react"
+import { ArrowLeft, BookOpen, CheckCircle, Clock, Award, TrendingUp, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { apiClient } from "@/lib/api-client"
+
+interface Module {
+  id: string
+  title: string
+  description: string
+  icon: string
+  duration: string
+  level: string
+  image: string
+  progress?: number
+  status?: 'completed' | 'in-progress' | 'not-started'
+}
+
+interface ApiResponse {
+  success: boolean
+  modules: Module[]
+}
 
 export default function DashboardPage() {
-  const modules = [
-    {
-      id: 1,
-      title: "Introduction to Food Safety",
-      description: "Learn the basics of food safety and why it matters",
-      icon: "🍽️",
-      progress: 100,
-      status: "completed",
-      duration: "15 min",
-    },
-    {
-      id: 2,
-      title: "Hygiene & Cleanliness",
-      description: "Personal hygiene practices and cleaning procedures",
-      icon: "🧼",
-      progress: 100,
-      status: "completed",
-      duration: "20 min",
-    },
-    {
-      id: 3,
-      title: "Food Handling & Storage",
-      description: "Safe storage temperatures and handling techniques",
-      icon: "🥩",
-      progress: 60,
-      status: "in-progress",
-      duration: "25 min",
-    },
-    {
-      id: 4,
-      title: "Kitchen Setup & Safety",
-      description: "Layout design and waste management",
-      icon: "🏠",
-      progress: 0,
-      status: "not-started",
-      duration: "18 min",
-    },
-    {
-      id: 5,
-      title: "Certification Requirements",
-      description: "Documents needed and inspection preparation",
-      icon: "📝",
-      progress: 0,
-      status: "not-started",
-      duration: "22 min",
-    },
-  ]
+  const [modules, setModules] = useState<Module[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const overallProgress = Math.round(modules.reduce((acc, module) => acc + module.progress, 0) / modules.length)
+  useEffect(() => {
+    const fetchModules = async () => {
+      try {
+        const response = await apiClient.getModules() as ApiResponse
+        if (response?.success && Array.isArray(response.modules)) {
+          // Add mock progress and status for now - in a real app, this would come from the user's progress
+          const modulesWithProgress = response.modules.map((module: Module, index: number) => ({
+            ...module,
+            progress: index === 0 || index === 1 ? 100 : index === 2 ? 60 : 0,
+            status: (index <= 1 ? 'completed' : index === 2 ? 'in-progress' : 'not-started') as 'completed' | 'in-progress' | 'not-started'
+          }))
+          setModules(modulesWithProgress)
+        } else {
+          throw new Error('Invalid response format')
+        }
+      } catch (err) {
+        console.error('Failed to fetch modules:', err)
+        setError('Failed to load training modules. Please try again later.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchModules()
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center my-12">
+        <p className="text-red-500 mb-4">{error}</p>
+        <Button onClick={() => window.location.reload()}>Try Again</Button>
+      </div>
+    )
+  }
+
+  const completedModules = modules.filter(module => module.status === 'completed').length
+  const overallProgress = Math.round(modules.reduce((acc, module) => acc + (module.progress || 0), 0) / modules.length)
 
   return (
     <div className="min-h-screen bg-gray-50">

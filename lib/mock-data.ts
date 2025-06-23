@@ -153,6 +153,54 @@ export const mockModules = [
     averageRating: 4.6,
     totalReviews: 89,
   },
+  {
+    id: "4",
+    title: "Kitchen Setup & Safety",
+    description: "Layout design and waste management",
+    icon: "🏠",
+    duration: "25 min",
+    level: "Beginner",
+    image: "https://picsum.photos/600/400?random=16",
+    slides: [
+      {
+        id: "4-1",
+        title: "Kitchen Layout Basics",
+        content: "Proper kitchen layout is essential for food safety and hygiene.",
+        keyPoints: [
+          "Keep raw and cooked foods separate",
+          "Use proper containers and labels",
+          "Store food at the right temperature",
+        ],
+        image: "https://picsum.photos/600/400?random=16",
+      },
+    ],
+    averageRating: 4.6,
+    totalReviews: 89,
+  },
+  {
+    id: "5",
+    title: "Certification Requirements",
+    description: "Documents needed and inspection preparation",
+    icon: "📝",
+    duration: "18 min",
+    level: "Beginner",
+    image: "https://picsum.photos/600/400?random=17",
+    slides: [
+      {
+        id: "5-1",
+        title: "Certification Basics",
+        content: "Proper certification is essential for food safety and hygiene.",
+        keyPoints: [
+          "Keep raw and cooked foods separate",
+          "Use proper containers and labels",
+          "Store food at the right temperature",
+        ],
+        image: "https://picsum.photos/600/400?random=17",
+      },
+    ],
+    averageRating: 4.6,
+    totalReviews: 89,
+  },
 ]
 
 export const mockReviews = [
