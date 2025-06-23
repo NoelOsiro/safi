@@ -97,15 +97,15 @@ export default function ChatPage() {
                   <Button
                     key={index}
                     variant="outline"
-                    className="w-full text-left justify-start h-auto p-3 flex items-center space-x-2"
+                    className="w-full text-left justify-start h-auto p-3 flex items-center space-x-2 overflow-hidden"
                     onClick={() => {
                       const event = { preventDefault: () => {} } as any
                       handleInputChange({ target: { value: action.text } } as any)
                       handleSubmit(event)
                     }}
                   >
-                    <span className="text-sm">{action.icon}</span>
-                    <span className="text-sm">{action.text}</span>
+                    <span className="flex-shrink-0">{action.icon}</span>
+                    <span className="text-sm whitespace-nowrap overflow-hidden text-ellipsis">{action.text}</span>
                   </Button>
                 ))}
               </CardContent>
