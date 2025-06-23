@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { ArrowLeft, BookOpen, CheckCircle, Clock, Award, TrendingUp, Loader2 } from "lucide-react"
+import { ArrowLeft, BookOpen, CheckCircle, Clock, Award, TrendingUp, Loader2, MessageCircle } from "lucide-react"
 import Link from "next/link"
 import { apiClient } from "@/lib/api-client"
 
@@ -159,60 +159,58 @@ export default function DashboardPage() {
 
           <div className="grid gap-6">
             {modules.map((module) => (
-              <Link 
-                href={`/training/modules/${module.id}`} 
+              <Card 
                 key={module.id}
-                className="block"
+                className="hover:shadow-md transition-shadow group overflow-hidden p-6 cursor-pointer"
+                onClick={() => window.location.href = `/training/modules/${module.id}`}
               >
-                <Card className="hover:shadow-md transition-shadow group overflow-hidden p-6">
                 <div className="relative">
-                    <CardHeader className="p-0">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-4">
-                          <div className="text-3xl">{module.icon}</div>
-                          <div className="flex-1">
-                            <CardTitle className="text-lg">
-                              Module {module.id}: {module.title}
-                            </CardTitle>
-                            <CardDescription className="mt-1">{module.description}</CardDescription>
-                            <div className="flex items-center space-x-4 mt-3">
-                              <Badge
-                                variant={
-                                  module.status === "completed"
-                                    ? "default"
-                                    : module.status === "in-progress"
-                                      ? "secondary"
-                                      : "outline"
-                                }
-                                className={
-                                  module.status === "completed"
-                                    ? "bg-green-100 text-green-800 hover:bg-green-100"
-                                    : module.status === "in-progress"
-                                      ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-                                      : ""
-                                }
-                              >
-                                {module.status === "completed"
-                                  ? "Completed"
+                  <CardHeader className="p-0">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-start space-x-4">
+                        <div className="text-3xl">{module.icon}</div>
+                        <div>
+                          <CardTitle className="text-lg">
+                            Module {module.id}: {module.title}
+                          </CardTitle>
+                          <CardDescription className="mt-1">{module.description}</CardDescription>
+                          <div className="flex items-center space-x-4 mt-3">
+                            <Badge
+                              variant={
+                                module.status === "completed"
+                                  ? "default"
                                   : module.status === "in-progress"
-                                    ? "In Progress"
-                                    : "Not Started"}
-                              </Badge>
-                              <span className="text-sm text-gray-500 flex items-center">
-                                <Clock className="h-4 w-4 mr-1" />
-                                {module.duration}
-                              </span>
-                            </div>
+                                    ? "secondary"
+                                    : "outline"
+                              }
+                              className={
+                                module.status === "completed"
+                                  ? "bg-green-100 text-green-800 hover:bg-green-100"
+                                  : module.status === "in-progress"
+                                    ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
+                                    : ""
+                              }
+                            >
+                              {module.status === "completed"
+                                ? "Completed"
+                                : module.status === "in-progress"
+                                  ? "In Progress"
+                                  : "Not Started"}
+                            </Badge>
+                            <span className="text-sm text-gray-500 flex items-center">
+                              <Clock className="h-4 w-4 mr-1" />
+                              {module.duration}
+                            </span>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-gray-900">{module.progress}%</div>
-                          <Progress value={module.progress} className="w-20 mt-1" />
-                        </div>
                       </div>
-                    </CardHeader>
+                      <div className="text-right ml-4">
+                        <div className="text-2xl font-bold text-gray-900">{module.progress}%</div>
+                        <Progress value={module.progress} className="w-20 mt-1" />
+                      </div>
+                    </div>
+                  </CardHeader>
 
-                  
                   <CardContent className="p-6 pt-2">
                     <div className="flex items-center justify-between">
                       <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
@@ -223,28 +221,33 @@ export default function DashboardPage() {
                           </Button>
                         )}
                         {module.status === "in-progress" && (
-                          <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
                             <BookOpen className="h-4 w-4 mr-2" />
                             Continue
                           </Button>
                         )}
                         {module.status === "not-started" && (
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
                             <BookOpen className="h-4 w-4 mr-2" />
                             Start Module
                           </Button>
                         )}
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.location.href = `/chat?module=${module.id}`;
+                          }}
+                        >
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          Ask AI
+                        </Button>
                       </div>
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/chat?module=${module.id}`} onClick={(e) => e.stopPropagation()}>
-                          Ask AI Coach
-                        </Link>
-                      </Button>
                     </div>
                   </CardContent>
                 </div>
               </Card>
-              </Link>
             ))}
           </div>
         </div>
