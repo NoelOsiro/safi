@@ -149,7 +149,7 @@ export default function TrainingPage() {
           {modules.map((module) => (
             <Link 
               key={module.id} 
-              href={`/training/module-${module.id}`}
+              href={`/training/modules/${module.id}`}
               className="block transition-all duration-300 hover:-translate-y-1"
             >
               <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-emerald-500 hover:border-emerald-600 hover:bg-white/95">

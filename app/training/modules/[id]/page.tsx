@@ -183,12 +183,13 @@ export default function ModulePage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <Button variant="ghost" asChild className="mb-6">
-        <Link href="/training" className="flex items-center">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Training
-        </Link>
-      </Button>
+      <Link 
+        href="/training" 
+        className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 mb-6"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Training
+      </Link>
 
       <h1 className="text-3xl font-bold mb-2">{currentModule.title}</h1>
       <p className="text-gray-600 mb-8">{currentModule.description}</p>
