@@ -1,28 +1,35 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { signIn, useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, User, MapPin, Briefcase, Loader2 } from "lucide-react"
-import Link from "next/link"
-import { useAuthStore } from "@/lib/stores/auth-store"
-import { apiClient } from "@/lib/api-client"
-import { useRouter } from "next/navigation"
+import { Loader2, User, Briefcase, MapPin, AlertCircle } from "lucide-react"
+
+type FormData = {
+  phone: string
+  businessType: string
+  location: string
+  experience: string
+  agreeToTerms: boolean
+}
 
 export default function SignUpPage() {
   const router = useRouter()
-  const login = useAuthStore((state) => state.login)
+  const searchParams = useSearchParams()
+  const { data: session, status } = useSession()
   const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
+  const [currentStep, setCurrentStep] = useState(1)
+  const totalSteps = 2
 
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
+  const [formData, setFormData] = useState<FormData>({
     phone: "",
     businessType: "",
     location: "",
@@ -30,313 +37,327 @@ export default function SignUpPage() {
     agreeToTerms: false,
   })
 
-  const [currentStep, setCurrentStep] = useState(1)
-  const totalSteps = 3
-
-  const handleInputChange = (field: string, value: string | boolean) => {
+  const handleInputChange = (field: keyof FormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     setError("")
   }
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1)
+      setCurrentStep((step) => step + 1)
     }
   }
 
   const handlePrevious = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
+      setCurrentStep((step) => step - 1)
     }
   }
 
-  const handleSubmit = async () => {
+  const handleAzureSignIn = async () => {
     setIsLoading(true)
     setError("")
-
     try {
-      const response = await apiClient.signup(formData)
-
-      if (response.success) {
-        login(response.user)
-        router.push("/onboarding")
-      }
-    } catch (err: any) {
-      setError(err.message || "Failed to create account")
-    } finally {
+      await signIn("azure-ad", { callbackUrl: "/auth/signup" })
+    } catch (error) {
+      setError("Failed to sign in with Azure AD")
       setIsLoading(false)
     }
   }
 
-  const renderStep1 = () => (
-    <div className="space-y-6 animate-fade-in-up">
-      <div className="text-center mb-6">
-        <User className="h-12 w-12 text-emerald-600 mx-auto mb-3" />
-        <h2 className="text-2xl font-bold text-slate-800">Personal Information</h2>
-        <p className="text-slate-600">Tell us about yourself</p>
-      </div>
+  const handleSubmit = async () => {
+    if (status !== "authenticated") {
+      return handleAzureSignIn()
+    }
 
-      <div className="space-y-4">
-        <div>
-          <Label htmlFor="fullName">Full Name *</Label>
-          <Input
-            id="fullName"
-            value={formData.fullName}
-            onChange={(e) => handleInputChange("fullName", e.target.value)}
-            placeholder="Enter your full name"
-            className="mt-1"
-          />
-        </div>
+    if (currentStep < totalSteps) {
+      return handleNext()
+    }
 
-        <div>
-          <Label htmlFor="email">Email Address *</Label>
-          <Input
-            id="email"
-            type="email"
-            value={formData.email}
-            onChange={(e) => handleInputChange("email", e.target.value)}
-            placeholder="your.email@example.com"
-            className="mt-1"
-          />
-        </div>
+    setIsSubmitting(true)
+    setError("")
 
-        <div>
-          <Label htmlFor="phone">Phone Number *</Label>
-          <Input
-            id="phone"
-            value={formData.phone}
-            onChange={(e) => handleInputChange("phone", e.target.value)}
-            placeholder="+254 700 000 000"
-            className="mt-1"
-          />
-        </div>
-      </div>
-    </div>
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          name: session?.user?.name,
+          email: session?.user?.email,
+          image: session?.user?.image,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to complete signup")
+      }
+
+      if (data.success) {
+        router.push(data.user.onboardingCompleted ? "/dashboard" : "/onboarding")
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to complete signup")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const renderAuthStep = () => (
+    <Card className="w-full shadow-lg">
+      <CardHeader className="space-y-1 px-6 pt-8 pb-4">
+        <CardTitle className="text-2xl font-bold text-center text-gray-900">
+          Create your account
+        </CardTitle>
+        <CardDescription className="text-center text-gray-600">
+          Sign up with your email to get started
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6 px-6 pb-8 pt-2">
+        <Button
+          onClick={handleAzureSignIn}
+          disabled={isLoading}
+          className="w-full bg-[#0078D4] hover:bg-[#106EBE] text-white py-2 h-auto text-base"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Signing in...
+            </>
+          ) : (
+            <span className="flex items-center justify-center">
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 21 21" fill="currentColor">
+                <path d="M0 3.5h9v15H0z" fill="#f3f3f3"/>
+                <path d="M15.3 10.2c0-2.9-1.2-4.9-3-6.3l-2.4 2.4c.8.6 1.3 1.6 1.3 3 0 1.3-.5 2.3-1.3 3l2.4 2.4c1.8-1.4 3-3.5 3-6.4z" fill="#f3f3f3"/>
+                <path d="M21 10.2c0 2.9-1.2 5.8-3 7.1l-2.4-2.4c.8-.6 1.3-1.7 1.3-3 0-1.3-.5-2.4-1.3-3l2.4-2.4c1.8 1.3 3 4.2 3 7.1z" fill="#f3f3f3"/>
+              </svg>
+              Sign in with Microsoft
+            </span>
+          )}
+        </Button>
+        <p className="text-center text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <a href="/auth/signin" className="text-primary hover:underline font-medium">
+            Sign in
+          </a>
+        </p>
+      </CardContent>
+    </Card>
   )
 
-  const renderStep2 = () => (
-    <div className="space-y-6 animate-fade-in-up">
-      <div className="text-center mb-6">
-        <Briefcase className="h-12 w-12 text-emerald-600 mx-auto mb-3" />
-        <h2 className="text-2xl font-bold text-slate-800">Business Information</h2>
-        <p className="text-slate-600">Help us understand your food business</p>
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <Label htmlFor="businessType">Business Type *</Label>
-          <Select value={formData.businessType} onValueChange={(value) => handleInputChange("businessType", value)}>
-            <SelectTrigger className="mt-1">
-              <SelectValue placeholder="Select your business type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="street-vendor">Street Food Vendor</SelectItem>
-              <SelectItem value="restaurant">Restaurant</SelectItem>
-              <SelectItem value="school-kitchen">School Kitchen</SelectItem>
-              <SelectItem value="catering">Catering Service</SelectItem>
-              <SelectItem value="hotel">Hotel/Lodge</SelectItem>
-              <SelectItem value="home-based">Home-based Food Business</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label htmlFor="location">Location (County) *</Label>
-          <Select value={formData.location} onValueChange={(value) => handleInputChange("location", value)}>
-            <SelectTrigger className="mt-1">
-              <SelectValue placeholder="Select your county" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="nairobi">Nairobi</SelectItem>
-              <SelectItem value="mombasa">Mombasa</SelectItem>
-              <SelectItem value="kisumu">Kisumu</SelectItem>
-              <SelectItem value="eldoret">Uasin Gishu (Eldoret)</SelectItem>
-              <SelectItem value="machakos">Machakos</SelectItem>
-              <SelectItem value="nakuru">Nakuru</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label htmlFor="experience">Experience Level</Label>
-          <Select value={formData.experience} onValueChange={(value) => handleInputChange("experience", value)}>
-            <SelectTrigger className="mt-1">
-              <SelectValue placeholder="How long have you been in food business?" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="new">Just starting (0-6 months)</SelectItem>
-              <SelectItem value="beginner">Beginner (6 months - 2 years)</SelectItem>
-              <SelectItem value="intermediate">Intermediate (2-5 years)</SelectItem>
-              <SelectItem value="experienced">Experienced (5+ years)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-    </div>
-  )
-
-  const renderStep3 = () => (
-    <div className="space-y-6 animate-fade-in-up">
-      <div className="text-center mb-6">
-        <MapPin className="h-12 w-12 text-emerald-600 mx-auto mb-3" />
-        <h2 className="text-2xl font-bold text-slate-800">Almost Done!</h2>
-        <p className="text-slate-600">Review your information and agree to our terms</p>
-      </div>
-
-      <div className="bg-emerald-50 rounded-lg p-4 space-y-2">
-        <h3 className="font-semibold text-emerald-800">Your Information:</h3>
-        <p className="text-sm text-emerald-700">
-          <strong>Name:</strong> {formData.fullName}
-        </p>
-        <p className="text-sm text-emerald-700">
-          <strong>Email:</strong> {formData.email}
-        </p>
-        <p className="text-sm text-emerald-700">
-          <strong>Business:</strong> {formData.businessType}
-        </p>
-        <p className="text-sm text-emerald-700">
-          <strong>Location:</strong> {formData.location}
-        </p>
-      </div>
-
-      <div className="flex items-start space-x-3">
-        <Checkbox
-          id="terms"
-          checked={formData.agreeToTerms}
-          onCheckedChange={(checked) => handleInputChange("agreeToTerms", checked as boolean)}
-        />
-        <Label htmlFor="terms" className="text-sm leading-relaxed">
-          I agree to the{" "}
-          <Link href="/terms" className="text-emerald-600 hover:underline">
-            Terms of Service
-          </Link>{" "}
-          and{" "}
-          <Link href="/privacy" className="text-emerald-600 hover:underline">
-            Privacy Policy
-          </Link>
-          . I understand that Mama Safi will help me learn food safety practices and prepare for certification.
-        </Label>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-          <p className="text-red-700 text-sm">{error}</p>
-        </div>
-      )}
-    </div>
-  )
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
-      {/* Header */}
-      <header className="bg-white/90 backdrop-blur-md border-b border-emerald-100">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Home
-            </Link>
-          </Button>
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-sm">MS</span>
+  const renderProfileStep = () => (
+    <Card className="w-full shadow-lg">
+      <CardHeader className="space-y-1 px-6 pt-8 pb-4">
+        <CardTitle className="text-2xl font-bold text-gray-900">
+          Complete your profile
+        </CardTitle>
+        <CardDescription className="text-gray-600">
+          Tell us more about yourself
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="p-4 bg-muted rounded-lg">
+          <div className="flex items-center space-x-4">
+            <img
+              className="h-12 w-12 rounded-full"
+              src={session?.user?.image || `https://ui-avatars.com/api/?name=${session?.user?.name || "User"}&background=10B981&color=fff`}
+              alt="User avatar"
+            />
+            <div>
+              <p className="font-medium">{session?.user?.name || "User"}</p>
+              <p className="text-sm text-muted-foreground">{session?.user?.email}</p>
             </div>
-            <span className="font-bold text-emerald-800">MAMA SAFI</span>
           </div>
         </div>
-      </header>
 
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        {/* Progress Indicator */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-3xl font-bold text-slate-800">Join Mama Safi</h1>
-            <Badge variant="secondary">
-              Step {currentStep} of {totalSteps}
-            </Badge>
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="phone">Phone Number *</Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => handleInputChange("phone", e.target.value)}
+              placeholder="+254 700 123 456"
+              className="mt-1"
+              required
+            />
           </div>
-          <div className="flex space-x-2">
-            {[1, 2, 3].map((step) => (
+
+          {currentStep === 2 && (
+            <>
+              <div>
+                <Label htmlFor="businessType">Business Type *</Label>
+                <Select
+                  value={formData.businessType}
+                  onValueChange={(value) => handleInputChange("businessType", value)}
+                >
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Select business type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="street-vendor">Street Vendor</SelectItem>
+                    <SelectItem value="restaurant">Restaurant</SelectItem>
+                    <SelectItem value="catering">Catering Service</SelectItem>
+                    <SelectItem value="school-kitchen">School Kitchen</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="location">Location *</Label>
+                <Select
+                  value={formData.location}
+                  onValueChange={(value) => handleInputChange("location", value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select your location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nairobi">Nairobi</SelectItem>
+                    <SelectItem value="mombasa">Mombasa</SelectItem>
+                    <SelectItem value="kisumu">Kisumu</SelectItem>
+                    <SelectItem value="nakuru">Nakuru</SelectItem>
+                    <SelectItem value="eldoret">Eldoret</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="experience">Experience Level</Label>
+                <Select
+                  value={formData.experience}
+                  onValueChange={(value) => handleInputChange("experience", value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select your experience level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">Beginner (0-1 year)</SelectItem>
+                    <SelectItem value="intermediate">Intermediate (1-3 years)</SelectItem>
+                    <SelectItem value="experienced">Experienced (3+ years)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-start space-x-2 pt-2">
+                <Checkbox
+                  id="terms"
+                  checked={formData.agreeToTerms}
+                  onCheckedChange={(checked) => handleInputChange("agreeToTerms", !!checked)}
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <label
+                    htmlFor="terms"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    I agree to the{" "}
+                    <a href="/terms" className="text-primary hover:underline">
+                      Terms of Service
+                    </a>{" "}
+                    and{" "}
+                    <a href="/privacy" className="text-primary hover:underline">
+                      Privacy Policy
+                    </a>
+                  </label>
+                </div>
+              </div>
+            </>
+          )}
+
+          {error && (
+            <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-md">
+              <AlertCircle className="w-4 h-4" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="flex justify-between pt-4">
+            {currentStep === 2 ? (
+              <Button variant="outline" onClick={handlePrevious} disabled={isSubmitting}>
+                Back
+              </Button>
+            ) : (
+              <div />
+            )}
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || (currentStep === 1 && !formData.phone) || (currentStep === 2 && !formData.agreeToTerms)}
+              className="ml-auto bg-emerald-600 hover:bg-emerald-700"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {currentStep === 2 ? "Completing..." : "Continue"}
+                </>
+              ) : currentStep === 2 ? (
+                "Complete Sign Up"
+              ) : (
+                "Continue"
+              )}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  // Render loading state
+  if (status === "loading") {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading your session...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // If not authenticated, show auth step
+  if (status !== "authenticated") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="w-full max-w-md">
+          {renderAuthStep()}
+        </div>
+      </div>
+    )
+  }
+
+  // Show the profile completion form for authenticated users
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+      <div className="w-full max-w-md space-y-8">
+        {/* Progress Indicator */}
+        <div className="space-y-2 text-center">
+          <div className="flex justify-center space-x-2">
+            {Array.from({ length: totalSteps }).map((_, i) => (
               <div
-                key={step}
-                className={`flex-1 h-2 rounded-full transition-all duration-300 ${
-                  step <= currentStep ? "bg-emerald-500" : "bg-gray-200"
+                key={i}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  i + 1 <= currentStep ? "bg-primary w-6" : "bg-gray-200 w-2"
                 }`}
               />
             ))}
           </div>
+          <p className="text-sm text-muted-foreground">
+            Step {currentStep} of {totalSteps}
+          </p>
         </div>
 
-        {/* Form Card */}
-        <Card className="shadow-xl border-0">
-          <CardContent className="p-8">
-            {currentStep === 1 && renderStep1()}
-            {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && renderStep3()}
-
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8">
-              <Button
-                variant="outline"
-                onClick={handlePrevious}
-                disabled={currentStep === 1 || isLoading}
-                className="flex-1 mr-3"
-              >
-                Previous
-              </Button>
-
-              {currentStep < totalSteps ? (
-                <Button
-                  onClick={handleNext}
-                  disabled={
-                    isLoading ||
-                    (currentStep === 1 && (!formData.fullName || !formData.email || !formData.phone)) ||
-                    (currentStep === 2 && (!formData.businessType || !formData.location))
-                  }
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-                >
-                  Next Step
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!formData.agreeToTerms || isLoading}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating Account...
-                    </>
-                  ) : (
-                    "Create Account"
-                  )}
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Benefits Section */}
-        <div className="mt-8 grid md:grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-white/80 rounded-lg">
-            <div className="text-2xl mb-2">🎓</div>
-            <h3 className="font-semibold text-slate-800">Learn</h3>
-            <p className="text-sm text-slate-600">5 comprehensive modules</p>
-          </div>
-          <div className="text-center p-4 bg-white/80 rounded-lg">
-            <div className="text-2xl mb-2">📱</div>
-            <h3 className="font-semibold text-slate-800">Practice</h3>
-            <p className="text-sm text-slate-600">AI-powered assessments</p>
-          </div>
-          <div className="text-center p-4 bg-white/80 rounded-lg">
-            <div className="text-2xl mb-2">🏆</div>
-            <h3 className="font-semibold text-slate-800">Certify</h3>
-            <p className="text-sm text-slate-600">Get ready for inspection</p>
-          </div>
+        {/* Form Content */}
+        <div className="space-y-6">
+          {currentStep === 1 && renderProfileStep()}
+          {currentStep === 2 && renderProfileStep()}
         </div>
+
+        {/* Navigation Buttons */}
+
       </div>
     </div>
   )
