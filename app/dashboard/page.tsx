@@ -79,29 +79,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Home
-              </Link>
-            </Button>
-            <h1 className="text-2xl font-bold text-gray-900">Training Dashboard</h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button asChild variant="outline">
-              <Link href="/assessment">Take Assessment</Link>
-            </Button>
-            <Button asChild className="bg-green-600 hover:bg-green-700">
-              <Link href="/chat">AI Coach</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
-
       <div className="container mx-auto px-4 py-8">
         {/* Progress Overview */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">

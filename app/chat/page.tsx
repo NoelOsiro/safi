@@ -84,7 +84,7 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
+      <div className="container mx-auto px-4 py-6">
         <div className="grid lg:grid-cols-4 gap-6">
           {/* Quick Actions Sidebar */}
           <div className="lg:col-span-1">
