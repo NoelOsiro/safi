@@ -1,3 +1,30 @@
+export interface Review {
+  id: string
+  userId: string
+  moduleId: string
+  date: string
+  helpful: number
+  notHelpful: number
+  rating: number
+  comment: string
+  createdAt: string
+  user?: {
+    fullName: string
+    username: string
+    avatar: string
+  }
+}
+
+interface CreateReviewResponse {
+  success: boolean
+  review: Review
+}
+
+interface ReviewsResponse {
+  success: boolean
+  reviews: Review[]
+}
+
 class ApiClient {
   private baseUrl: string
 
@@ -74,26 +101,47 @@ class ApiClient {
     return this.request("/modules")
   }
 
+
   async getModule(id: string) {
-    return this.request(`/modules/${id}`)
+    return this.request<{
+      success: boolean
+      module: {
+        id: string
+        title: string
+        description: string
+        icon: string
+        duration: string
+        level: string
+        image: string
+        slides: Array<{
+          id: string
+          title: string
+          content: string
+          keyPoints: string[]
+          image: string
+        }>
+        averageRating: number
+        totalReviews: number
+      }
+    }>(`/modules/${id}`)
   }
 
   // Review endpoints
-  async getReviews(moduleId?: string) {
-    const query = moduleId ? `?moduleId=${moduleId}` : ""
-    return this.request(`/reviews${query}`)
+  async getReviews(moduleId: string): Promise<{ success: boolean; reviews: Review[] }> {
+    const response = await this.request<{ success: boolean; reviews: Review[] }>(`/reviews?moduleId=${moduleId}`);
+    return response;
   }
 
-  async createReview(reviewData: any) {
-    return this.request("/reviews", {
-      method: "POST",
+  async createReview(reviewData: Omit<Review, 'id' | 'createdAt' | 'user'> & { userId: string; userName: string; userAvatar: string }): Promise<CreateReviewResponse> {
+    return this.request<CreateReviewResponse>('/reviews', {
+      method: 'POST',
       body: JSON.stringify(reviewData),
-    })
+    });
   }
 
   // Admin endpoints
   async getAdminStats() {
-    return this.request("/admin/stats")
+    return this.request("/admin/stats");
   }
 
   // User endpoints
@@ -101,8 +149,8 @@ class ApiClient {
     return this.request("/user/progress", {
       method: "PUT",
       body: JSON.stringify({ userId, progress }),
-    })
+    });
   }
 }
 
-export const apiClient = new ApiClient()
+export const apiClient = new ApiClient();

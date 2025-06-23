@@ -88,18 +88,36 @@ export default function Module1Page() {
 
     setIsSubmittingReview(true)
     try {
-      const reviewData = {
+      // Data for the API call
+      const apiReviewData = {
         moduleId: "1",
         userId: user.id,
-        userName: user.fullName,
-        userAvatar: user.avatar || `https://picsum.photos/40/40?random=${user.id}`,
+        date: new Date().toISOString(),
+        helpful: 0,
+        notHelpful: 0,
         rating: userRating,
         comment: userReview,
-      }
+        userName: user.fullName,
+        userAvatar: user.avatar || `https://picsum.photos/40/40?random=${user.id}`
+      };
 
-      const response = await apiClient.createReview(reviewData)
+      const response = await apiClient.createReview(apiReviewData);
+      
       if (response.success) {
-        addReview(reviewData)
+        // Data for the store update (matches the Review type)
+        const storeReviewData = {
+          moduleId: "1",
+          userId: user.id,
+          rating: userRating,
+          comment: userReview,
+          user: {
+            fullName: user.fullName,
+            username: user.username,
+            avatar: user.avatar || `https://picsum.photos/40/40?random=${user.id}`
+          },
+          createdAt: new Date().toISOString()
+        };
+        addReview(storeReviewData)
         setShowReview(false)
         setUserRating(0)
         setUserReview("")
@@ -408,12 +426,12 @@ export default function Module1Page() {
                     <div className="flex items-start space-x-4">
                       <Avatar className="h-10 w-10">
                         <AvatarFallback className="bg-emerald-100 text-emerald-700">
-                          {review.userName.charAt(0)}
+                          {review.user.username.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">
-                          <h5 className="font-semibold text-slate-800">{review.userName}</h5>
+                          <h5 className="font-semibold text-slate-800">{review.user.username}</h5>
                           <span className="text-sm text-slate-500">{new Date(review.date).toLocaleDateString()}</span>
                         </div>
                         <div className="flex items-center mb-2">

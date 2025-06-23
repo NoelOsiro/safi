@@ -1,17 +1,7 @@
 import { create } from "zustand"
+import { Review } from "../api-client"
 
-interface Review {
-  id: string
-  moduleId: string
-  userId: string
-  userName: string
-  userAvatar: string
-  rating: number
-  comment: string
-  date: string
-  helpful: number
-  notHelpful: number
-}
+
 
 interface ReviewState {
   reviews: Review[]

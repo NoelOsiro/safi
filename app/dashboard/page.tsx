@@ -159,80 +159,92 @@ export default function DashboardPage() {
 
           <div className="grid gap-6">
             {modules.map((module) => (
-              <Card key={module.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-4">
-                      <div className="text-3xl">{module.icon}</div>
-                      <div className="flex-1">
-                        <CardTitle className="text-lg">
-                          Module {module.id}: {module.title}
-                        </CardTitle>
-                        <CardDescription className="mt-1">{module.description}</CardDescription>
-                        <div className="flex items-center space-x-4 mt-3">
-                          <Badge
-                            variant={
-                              module.status === "completed"
-                                ? "default"
-                                : module.status === "in-progress"
-                                  ? "secondary"
-                                  : "outline"
-                            }
-                            className={
-                              module.status === "completed"
-                                ? "bg-green-100 text-green-800 hover:bg-green-100"
-                                : module.status === "in-progress"
-                                  ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-                                  : ""
-                            }
-                          >
-                            {module.status === "completed"
-                              ? "Completed"
-                              : module.status === "in-progress"
-                                ? "In Progress"
-                                : "Not Started"}
-                          </Badge>
-                          <span className="text-sm text-gray-500 flex items-center">
-                            <Clock className="h-4 w-4 mr-1" />
-                            {module.duration}
-                          </span>
+              <Link 
+                href={`/training/modules/${module.id}`} 
+                key={module.id}
+                className="block"
+              >
+                <Card className="hover:shadow-md transition-shadow group overflow-hidden p-6">
+                <div className="relative">
+                    <CardHeader className="p-0">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-4">
+                          <div className="text-3xl">{module.icon}</div>
+                          <div className="flex-1">
+                            <CardTitle className="text-lg">
+                              Module {module.id}: {module.title}
+                            </CardTitle>
+                            <CardDescription className="mt-1">{module.description}</CardDescription>
+                            <div className="flex items-center space-x-4 mt-3">
+                              <Badge
+                                variant={
+                                  module.status === "completed"
+                                    ? "default"
+                                    : module.status === "in-progress"
+                                      ? "secondary"
+                                      : "outline"
+                                }
+                                className={
+                                  module.status === "completed"
+                                    ? "bg-green-100 text-green-800 hover:bg-green-100"
+                                    : module.status === "in-progress"
+                                      ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
+                                      : ""
+                                }
+                              >
+                                {module.status === "completed"
+                                  ? "Completed"
+                                  : module.status === "in-progress"
+                                    ? "In Progress"
+                                    : "Not Started"}
+                              </Badge>
+                              <span className="text-sm text-gray-500 flex items-center">
+                                <Clock className="h-4 w-4 mr-1" />
+                                {module.duration}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-gray-900">{module.progress}%</div>
+                          <Progress value={module.progress} className="w-20 mt-1" />
                         </div>
                       </div>
+                    </CardHeader>
+
+                  
+                  <CardContent className="p-6 pt-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
+                        {module.status === "completed" && (
+                          <Button variant="outline" size="sm">
+                            <BookOpen className="h-4 w-4 mr-2" />
+                            Review
+                          </Button>
+                        )}
+                        {module.status === "in-progress" && (
+                          <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                            <BookOpen className="h-4 w-4 mr-2" />
+                            Continue
+                          </Button>
+                        )}
+                        {module.status === "not-started" && (
+                          <Button size="sm" variant="outline">
+                            <BookOpen className="h-4 w-4 mr-2" />
+                            Start Module
+                          </Button>
+                        )}
+                      </div>
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/chat?module=${module.id}`} onClick={(e) => e.stopPropagation()}>
+                          Ask AI Coach
+                        </Link>
+                      </Button>
                     </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-gray-900">{module.progress}%</div>
-                      <Progress value={module.progress} className="w-20 mt-1" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="flex space-x-2">
-                      {module.status === "completed" && (
-                        <Button variant="outline" size="sm">
-                          <BookOpen className="h-4 w-4 mr-2" />
-                          Review
-                        </Button>
-                      )}
-                      {module.status === "in-progress" && (
-                        <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                          <BookOpen className="h-4 w-4 mr-2" />
-                          Continue
-                        </Button>
-                      )}
-                      {module.status === "not-started" && (
-                        <Button size="sm" variant="outline">
-                          <BookOpen className="h-4 w-4 mr-2" />
-                          Start Module
-                        </Button>
-                      )}
-                    </div>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/chat?module=${module.id}`}>Ask AI Coach</Link>
-                    </Button>
-                  </div>
-                </CardContent>
+                  </CardContent>
+                </div>
               </Card>
+              </Link>
             ))}
           </div>
         </div>

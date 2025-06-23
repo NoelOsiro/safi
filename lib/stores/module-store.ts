@@ -1,5 +1,13 @@
 import { create } from "zustand"
 
+interface Slide {
+  id: string
+  title: string
+  content: string
+  // Add other slide properties as needed
+  [key: string]: any
+}
+
 interface Module {
   id: string
   title: string
@@ -8,7 +16,7 @@ interface Module {
   duration: string
   level: string
   image: string
-  slides: any[]
+  slides: Slide[]
   averageRating: number
   totalReviews: number
 }
@@ -16,7 +24,7 @@ interface Module {
 interface ModuleState {
   modules: Module[]
   currentModule: Module | null
-  currentSlide: number
+  currentSlide: number // This is the 1-based index of the current slide
   isLoading: boolean
   setModules: (modules: Module[]) => void
   setCurrentModule: (module: Module) => void
@@ -39,7 +47,7 @@ export const useModuleStore = create<ModuleState>((set, get) => ({
 
   nextSlide: () => {
     const { currentModule, currentSlide } = get()
-    if (currentModule && currentSlide < currentModule.slides.length) {
+    if (currentModule && currentSlide < (currentModule.slides?.length || 0)) {
       set({ currentSlide: currentSlide + 1 })
     }
   },
