@@ -27,7 +27,35 @@ class ApiClient {
   }
 
   // Auth endpoints
-  async signup(userData: any) {
+  async signup(userData: {
+    fullName: string
+    email: string
+    phone: string
+    businessType: string
+    location: string
+    experience: string
+    agreeToTerms: boolean
+  }): Promise<{
+    success: boolean
+    user: {
+      id: string
+      fullName: string
+      email: string
+      phone: string
+      businessType: string
+      location: string
+      experience: string
+      avatar: string
+      onboardingCompleted: boolean
+      progress: {
+        modulesCompleted: number
+        totalModules: number
+        assessmentScore: number
+        certificationReady: number
+        studyTime: number
+      }
+    }
+  }> {
     return this.request("/auth/signup", {
       method: "POST",
       body: JSON.stringify(userData),
