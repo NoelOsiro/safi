@@ -128,6 +128,31 @@ export const mockModules = [
     averageRating: 4.6,
     totalReviews: 89,
   },
+  {
+    id: "3",
+    title: "Food Storage & Handling",
+    description: "Proper storage and handling of food to prevent contamination",
+    icon: "🧼",
+    duration: "20 min",
+    level: "Beginner",
+    image: "https://picsum.photos/600/400?random=15",
+    slides: [
+      {
+        id: "3-1",
+        title: "Food Storage Basics",
+        content: "Proper storage of food is essential to prevent contamination and spoilage.",
+        keyPoints: [
+          "Store food in clean, dry, and cool places",
+          "Keep raw and cooked foods separate",
+          "Use proper containers and labels",
+          "Store food at the right temperature",
+        ],
+        image: "https://picsum.photos/600/400?random=15",
+      },
+    ],
+    averageRating: 4.6,
+    totalReviews: 89,
+  },
 ]
 
 export const mockReviews = [
