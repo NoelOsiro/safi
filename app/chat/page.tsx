@@ -60,10 +60,10 @@ export default function ChatPage() {
               </Avatar>
               <div>
                 <h1 className="font-semibold text-slate-800">Mama Safi AI Coach</h1>
-                <p className="text-xs text-emerald-600 flex items-center">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2 animate-pulse"></div>
+                <div className="text-xs text-emerald-600 flex items-center">
+                  <span className="w-2 h-2 bg-emerald-500 rounded-full mr-2 animate-pulse"></span>
                   Online • Ready to help
-                </p>
+                </div>
               </div>
             </div>
           </div>
