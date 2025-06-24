@@ -15,6 +15,7 @@ export function ProfileHeader({
       <div className="relative">
         <Avatar className="h-24 w-24 mb-2">
           <AvatarImage 
+          data-testid="user-avatar"
             src={user?.avatar || ''} 
             alt={user?.name || 'User'} 
           />

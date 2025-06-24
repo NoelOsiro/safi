@@ -1,9 +1,9 @@
-"use client"
-import type { ProfileFormData } from "@/lib/types/profile.types"
-import type { User } from "@/lib/types/user.types"
-import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
-import ProfileContent from "./profile-content"
+"use client";
+import type { ProfileFormData } from "@/lib/types/profile.types";
+import type { User } from "@/lib/types/user.types";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { ProfileContent } from "./profile-content";
 
 // Utility function to get user initials
 export const getUserInitials = (name?: string, email?: string): string => {
@@ -14,10 +14,10 @@ export const getUserInitials = (name?: string, email?: string): string => {
       .map((n) => n[0])
       .join("")
       .toUpperCase()
-      .slice(0, 2)
+      .slice(0, 2);
   }
-  return email ? email[0].toUpperCase() : "U"
-}
+  return email ? email[0].toUpperCase() : "U";
+};
 
 // Helper to safely get user data
 const getSafeUserData = (user: User | null) => ({
@@ -27,51 +27,65 @@ const getSafeUserData = (user: User | null) => ({
   businessType: user?.businessType || "",
   location: user?.location || "",
   experience: user?.experience || "",
-})
+});
 
 // Form validation function
 const validateForm = (data: ProfileFormData) => {
-  const errors: Partial<Record<keyof ProfileFormData, string>> = {}
+  const errors: Partial<Record<keyof ProfileFormData, string>> = {};
 
   if (!data.name?.trim()) {
-    errors.name = "Name is required"
+    errors.name = "Name is required";
   }
 
   if (!data.email?.trim()) {
-    errors.email = "Email is required"
+    errors.email = "Email is required";
   } else if (!/\S+@\S+\.\S+/.test(data.email)) {
-    errors.email = "Email is invalid"
+    errors.email = "Email is invalid";
   }
 
   return {
     isValid: Object.keys(errors).length === 0,
     errors,
-  }
-}
+  };
+};
 
 export default async function ProfilePage() {
-  const supabase = await createClient()
+  const supabase = await createClient();
   const {
     data: { session },
-  } = await supabase.auth.getSession()
+  } = await supabase.auth.getSession();
 
   if (!session) {
-    redirect("/login")
+    return redirect("/login"); // ⬅️ Important: stop execution
   }
 
-  // Get user profile from database
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", session.user.id).single()
+  let profile = null;
+  try {
+    const result = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", session.user.id)
+      .single();
+    profile = result.data;
+  } catch (error) {
+    profile = {}; // fallback to empty
+  }
 
   const user = {
     id: session.user.id,
     email: session.user.email!,
     name:
-      session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email!.split("@")[0],
-    fullName: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
+      session.user.user_metadata?.name ||
+      session.user.user_metadata?.full_name ||
+      session.user.email!.split("@")[0],
+    fullName:
+      session.user.user_metadata?.full_name || session.user.user_metadata?.name,
     avatar:
       session.user.user_metadata?.avatar_url ||
       session.user.user_metadata?.picture ||
-      `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(session.user.email!)}`,
+      `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
+        session.user.email!
+      )}`,
     phone: profile?.phone || "",
     businessType: profile?.business_type || "",
     location: profile?.location || "",
@@ -88,7 +102,7 @@ export default async function ProfilePage() {
     created_at: session.user.created_at,
     updated_at: session.user.updated_at,
     email_verified: !!session.user.email_confirmed_at,
-  }
+  };
 
-  return <ProfileContent user={user} />
+  return <ProfileContent user={user} />;
 }

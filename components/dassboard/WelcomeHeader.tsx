@@ -38,7 +38,7 @@ export function WelcomeHeader({ user }: WelcomeHeaderProps) {
       </div>
       {user ? (
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild aria-label="User menu">
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
                 <AvatarImage
@@ -81,7 +81,7 @@ export function WelcomeHeader({ user }: WelcomeHeaderProps) {
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <form action="/auth/signout" method="post">
-                <button type="submit" className="flex items-center w-full">
+                <button type="submit" className="flex items-center w-full" data-testid="logout-button">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </button>
