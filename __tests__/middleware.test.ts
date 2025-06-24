@@ -1,55 +1,93 @@
-import { middleware } from '../middleware';
-import { NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { NextRequest, NextResponse } from 'next/server';
 
-// Mock next-auth/jwt
-jest.mock('next-auth/jwt', () => ({
-  getToken: jest.fn(),
-}));
+// Mock the auth service
+const mockGetCurrentSession = jest.fn();
 
-// Mock NextResponse
-jest.mock('next/server', () => ({
-  NextResponse: {
-    next: jest.fn().mockImplementation(() => ({
-      request: { url: 'http://localhost:3000' },
-    })),
-    redirect: jest.fn().mockImplementation((url) => ({
-      url,
-      status: 307,
-    })),
+jest.mock('@/lib/services/auth.service', () => ({
+  authService: {
+    getCurrentSession: () => mockGetCurrentSession(),
   },
 }));
 
+// Mock NextResponse
+const mockNext = jest.fn().mockImplementation(() => ({
+  request: { url: 'http://localhost:3000' },
+}));
+
+const mockRedirect = jest.fn().mockImplementation((url: string) => ({
+  url,
+  status: 307,
+}));
+
+jest.mock('next/server', () => ({
+  NextResponse: {
+    next: () => mockNext(),
+    redirect: (url: string) => mockRedirect(url),
+  },
+}));
+
+// Import the middleware after setting up mocks
+const { middleware } = require('../../middleware');
+
 describe('Middleware', () => {
-  const mockRequest = (url: string, token = null) => {
-    (getToken as jest.Mock).mockResolvedValue(token);
+  const mockRequest = (url: string, hasSession = false) => {
+    // Reset mocks before each test
+    mockGetCurrentSession.mockReset();
+    mockNext.mockClear();
+    mockRedirect.mockClear();
+    
+    // Setup mock response
+    mockGetCurrentSession.mockResolvedValue(
+      hasSession ? { $id: 'session-123', userId: 'user-123' } : null
+    );
+    
     const fullUrl = `http://localhost:3000${url}`;
     return {
       url: fullUrl,
       nextUrl: new URL(fullUrl),
-    } as any;
+      headers: new Headers(),
+    } as NextRequest;
   };
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should allow access to non-protected routes', async () => {
-    const request = mockRequest('/public');
-    await middleware(request);
-    expect(NextResponse.next).toHaveBeenCalled();
+  it('should allow access to public routes', async () => {
+    const req = mockRequest('/api/public');
+    const response = await middleware(req);
+    expect(mockNext).toHaveBeenCalled();
+    expect(mockRedirect).not.toHaveBeenCalled();
   });
 
   it('should redirect to login for protected routes when not authenticated', async () => {
-    const request = mockRequest('/dashboard');
-    await middleware(request);
-    expect(NextResponse.redirect).toHaveBeenCalledWith(new URL('/auth/signin?callbackUrl=http%3A%2F%2Flocalhost%3A3000%2Fdashboard', 'http://localhost:3000'));
+    const req = mockRequest('/dashboard');
+    mockGetCurrentSession.mockResolvedValueOnce(null);
+    
+    const response = await middleware(req);
+    
+    expect(mockGetCurrentSession).toHaveBeenCalled();
+    expect(mockRedirect).toHaveBeenCalledWith(new URL('/login', req.url));
   });
 
   it('should allow access to protected routes when authenticated', async () => {
-    const request = mockRequest('/dashboard');
-    (getToken as jest.Mock).mockResolvedValueOnce({ id: '123' }); // Mock the token response
-    await middleware(request);
-    expect(NextResponse.next).toHaveBeenCalled();
+    const req = mockRequest('/dashboard', true);
+    mockGetCurrentSession.mockResolvedValueOnce({ $id: 'session-123', userId: 'user-123' });
+    
+    const response = await middleware(req);
+    
+    expect(mockGetCurrentSession).toHaveBeenCalled();
+    expect(mockNext).toHaveBeenCalled();
+    expect(mockRedirect).not.toHaveBeenCalled();
+  });
+
+  it('should redirect to dashboard when accessing login while authenticated', async () => {
+    const req = mockRequest('/login', true);
+    mockGetCurrentSession.mockResolvedValueOnce({ $id: 'session-123', userId: 'user-123' });
+    
+    const response = await middleware(req);
+    
+    expect(mockGetCurrentSession).toHaveBeenCalled();
+    expect(mockRedirect).toHaveBeenCalledWith(new URL('/dashboard', req.url));
   });
 });

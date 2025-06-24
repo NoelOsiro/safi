@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { signIn, useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,6 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, User, Briefcase, MapPin, AlertCircle } from "lucide-react"
+import authService from "@/lib/services/auth.service"
+import { useAuthStore } from "@/lib/stores/auth-store"
 
 type FormData = {
   phone: string
@@ -22,8 +23,7 @@ type FormData = {
 export default function SignUpPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { data: session, status } = useSession()
-  const [isLoading, setIsLoading] = useState(false)
+  const { user, isAuthenticated, isLoading } = useAuthStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [currentStep, setCurrentStep] = useState(1)
@@ -55,18 +55,16 @@ export default function SignUpPage() {
   }
 
   const handleAzureSignIn = async () => {
-    setIsLoading(true)
     setError("")
     try {
-      await signIn("azure-ad", { callbackUrl: "/auth/signup" })
+      await authService.signInWithMicrosoft()
     } catch (error) {
       setError("Failed to sign in with Azure AD")
-      setIsLoading(false)
     }
   }
 
   const handleSubmit = async () => {
-    if (status !== "authenticated") {
+    if (!isAuthenticated) {
       return handleAzureSignIn()
     }
 
@@ -83,9 +81,9 @@ export default function SignUpPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          name: session?.user?.name,
-          email: session?.user?.email,
-          image: session?.user?.image,
+          name: user?.name,
+          email: user?.email,
+          image: user?.image,
         }),
       })
 
@@ -162,12 +160,12 @@ export default function SignUpPage() {
           <div className="flex items-center space-x-4">
             <img
               className="h-12 w-12 rounded-full"
-              src={session?.user?.image || `https://ui-avatars.com/api/?name=${session?.user?.name || "User"}&background=10B981&color=fff`}
+              src={user?.image || `https://ui-avatars.com/api/?name=${user?.name || "User"}&background=10B981&color=fff`}
               alt="User avatar"
             />
             <div>
-              <p className="font-medium">{session?.user?.name || "User"}</p>
-              <p className="text-sm text-muted-foreground">{session?.user?.email}</p>
+              <p className="font-medium">{user?.name || "User"}</p>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
           </div>
         </div>

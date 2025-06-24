@@ -1,34 +1,34 @@
 import { create } from "zustand"
-import { persist } from "zustand/middleware"
+import { persist, createJSONStorage } from "zustand/middleware"
+import { User } from "@/lib/types/user.types"
+import { client, account } from '@/lib/appwrite';
+import { OAuthProvider } from "node-appwrite";
+import { apiClient } from "../api-client";
 
-interface User {
-  id: string
-  fullName: string
-  email: string
-  phone: string
-  username: string
-  businessType: string
-  location: string
-  experience: string
-  avatar?: string
-  onboardingCompleted: boolean
-  progress: {
-    modulesCompleted: number
-    totalModules: number
-    assessmentScore: number
-    certificationReady: number
-    studyTime: number
+// Helper function to safely get storage
+const getStorage = () => {
+  // Only access sessionStorage in browser environment
+  if (typeof window === 'undefined') {
+    return {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {},
+      getState: () => ({}),
+      setState: () => {}
+    };
   }
-}
+  return sessionStorage;
+};
 
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
-  needsOnboarding: boolean
-  login: (userData: any) => void
-  logout: () => void
-  completeOnboarding: () => void
-  updateProgress: (progress: Partial<User["progress"]>) => void
+  isLoading: boolean
+  error: string | null
+  login: (redirectUrl?: string) => Promise<void>
+  logout: () => Promise<void>
+  checkAuth: () => Promise<void>
+  updateUser: (userId: string, userData: Partial<User>) => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -36,48 +36,115 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       isAuthenticated: false,
-      needsOnboarding: false,
+      isLoading: false,
+      error: null,
 
-      login: (userData) => {
-        set({
-          user: userData,
-          isAuthenticated: true,
-          needsOnboarding: !userData.onboardingCompleted,
-        })
-      },
-
-      logout: () => {
-        set({
-          user: null,
-          isAuthenticated: false,
-          needsOnboarding: false,
-        })
-      },
-
-      completeOnboarding: () => {
-        const { user } = get()
-        if (user) {
-          set({
-            user: { ...user, onboardingCompleted: true },
-            needsOnboarding: false,
+      login: async (redirectUrl = '') => {
+        set({ isLoading: true, error: null })
+        try {
+          account.createOAuth2Token(
+            OAuthProvider.Microsoft,
+            `${redirectUrl}/api/auth/callback`,
+            `${redirectUrl}/login`,
+            
+          )
+          // Client-side flow will handle the rest
+        } catch (error) {
+          console.error('Login error:', error)
+          set({ 
+            error: error instanceof Error ? error.message : 'Failed to sign in',
+            isLoading: false 
           })
         }
       },
 
-      updateProgress: (progress) => {
-        const { user } = get()
-        if (user) {
+      logout: async () => {
+        try {
+          await account.deleteSession('current')
+        } catch (error) {
+          console.error('Logout error:', error)
+        } finally {
           set({
-            user: {
-              ...user,
-              progress: { ...user.progress, ...progress },
-            },
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
           })
         }
+      },
+
+      checkAuth: async () => {
+        set({ isLoading: true })
+        try {
+          // First check if there's an existing session
+          try {
+            const { user } = await apiClient.checkAuth()
+            if (user) {
+              set({
+                user,
+                isAuthenticated: true,
+                isLoading: false,
+                error: null,
+              })
+              return
+            }
+          } catch (error) {
+            // If we get a 401 or similar, it means no valid session exists
+            console.log('No active session found')
+          }
+          
+          // If we get here, either no user was returned or there was an error
+          set({ 
+            isAuthenticated: false, 
+            user: null,
+            error: null,
+            isLoading: false 
+          })
+        } catch (error) {
+          console.error('Auth check error:', error)
+          set({ 
+            isAuthenticated: false, 
+            user: null,
+            error: 'Failed to check authentication status',
+            isLoading: false
+          })
+        }
+      },
+
+      updateUser: async (userId: string, userData: Partial<User>) => {
+        set((state) => ({
+          user: state.user ? { ...state.user, ...userData } : null,
+        }));
       },
     }),
     {
-      name: "auth-storage",
+      name: 'auth-storage',
+      skipHydration: true, // Skip initial hydration to prevent SSR issues
+      storage: createJSONStorage(() => getStorage()),
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
     },
   ),
 )
+
+// Initialize auth state when store is created
+if (typeof window !== 'undefined') {
+  useAuthStore.getState().checkAuth()
+  
+  // Listen to auth state changes
+  client.subscribe('account', (response) => {
+    if (response.events.includes('users.*.sessions.*.create')) {
+      // User signed in
+      useAuthStore.getState().checkAuth()
+    } else if (response.events.includes('users.*.sessions.*.delete')) {
+      // User signed out
+      useAuthStore.setState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null,
+      })
+    }
+  })
+}

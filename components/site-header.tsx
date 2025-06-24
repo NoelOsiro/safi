@@ -2,16 +2,28 @@
 
 import Link from "next/link"
 import { Button } from "./ui/button"
-import { useSession } from "next-auth/react"
-import { usePathname } from "next/navigation"
-import { LogIn, UserPlus } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { LogIn, UserPlus, Loader2 } from "lucide-react"
+import  authService  from "@/lib/services/auth.service"
+import { useAuthStore } from "@/lib/stores/auth-store"
 
 export function SiteHeader() {
-  const { data: session, status } = useSession()
+  const { user, isAuthenticated, isLoading } = useAuthStore()
+  console.log(user)
   const pathname = usePathname()
+  const router = useRouter()
 
   // Don't show header on the landing page
   if (pathname === "/") return null
+  
+  const handleSignOut = async () => {
+    try {
+      await authService.signOut()
+      router.push('/login')
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
+  }
 
   return (
     <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/80 sticky top-0 z-50 shadow-sm">
@@ -57,47 +69,40 @@ export function SiteHeader() {
           </nav>
 
           <div className="flex items-center space-x-3">
-            {status === 'authenticated' ? (
-              <div className="flex items-center space-x-3">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  asChild
-                  className="rounded-full px-3 py-1.5 text-sm font-medium hover:bg-gray-100"
-                >
-                  <Link href="/profile" className="flex items-center space-x-2">
-                    <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 text-white text-sm font-medium">
-                      {session.user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-                    </span>
-                    <span className="hidden md:inline text-gray-700">
-                      {session.user?.name?.split(' ')[0] || 'Profile'}
-                    </span>
-                  </Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-3">
+            {isLoading ? (
+              <Button variant="ghost" size="sm" disabled>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Loading...
+              </Button>
+            ) : isAuthenticated ? (
+              <div className="flex items-center space-x-2">
+                <Link href="/profile">
+                  <Button variant="outline" size="sm">
+                    Profile
+                  </Button>
+                </Link>
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  asChild
-                  className="rounded-lg border-gray-300 hover:bg-gray-50 transition-colors"
+                  onClick={handleSignOut}
                 >
-                  <Link href="/auth/signin" className="flex items-center space-x-1.5">
+                  Sign out
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Link href="/login">
+                  <Button variant="outline" size="sm" className="flex items-center gap-1">
                     <LogIn className="h-4 w-4" />
-                    <span>Sign In</span>
-                  </Link>
-                </Button>
-                <Button 
-                  size="sm" 
-                  asChild 
-                  className="rounded-lg bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 shadow-sm hover:shadow-md transition-all"
-                >
-                  <Link href="/auth/signup" className="flex items-center space-x-1.5">
+                    Sign in
+                  </Button>
+                </Link>
+                <Link href="/signup">
+                  <Button size="sm" className="flex items-center gap-1">
                     <UserPlus className="h-4 w-4" />
-                    <span>Sign Up</span>
-                  </Link>
-                </Button>
+                    Sign up
+                  </Button>
+                </Link>
               </div>
             )}
           </div>

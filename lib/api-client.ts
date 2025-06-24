@@ -1,3 +1,5 @@
+import { User } from "./types/user.types"
+
 export interface Review {
   id: string
   userId: string
@@ -32,15 +34,30 @@ class ApiClient {
     this.baseUrl = process.env.NEXT_PUBLIC_API_URL || ""
   }
 
+  private getFullUrl(endpoint: string): string {
+    // If baseUrl is not set, use a relative URL
+    const basePath = this.baseUrl || ''
+    const baseUrl = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
+    return `${baseUrl}/api${cleanEndpoint}`
+  }
+
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${this.baseUrl}/api${endpoint}`
+    const url = this.getFullUrl(endpoint)
+    
+    const headers = new Headers()
+    headers.set('Content-Type', 'application/json')
+    
+    if (options.headers) {
+      Object.entries(options.headers).forEach(([key, value]) => {
+        if (value) headers.set(key, String(value))
+      })
+    }
 
     const config: RequestInit = {
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
       ...options,
+      headers,
+      credentials: 'include' as RequestCredentials
     }
 
     const response = await fetch(url, config)
@@ -98,7 +115,20 @@ class ApiClient {
 
   // Module endpoints
   async getModules() {
-    return this.request("/modules")
+    return this.request<{
+      success: boolean;
+      modules: Array<{
+        id: string;
+        title: string;
+        description: string;
+        icon: string;
+        duration: string;
+        level: string;
+        image: string;
+        progress?: number;
+        status?: 'completed' | 'in-progress' | 'not-started';
+      }>;
+    }>("/module");
   }
 
 
@@ -123,7 +153,7 @@ class ApiClient {
         averageRating: number
         totalReviews: number
       }
-    }>(`/modules/${id}`)
+    }>(`/module/${id}`)
   }
 
   // Review endpoints
@@ -150,6 +180,10 @@ class ApiClient {
       method: "PUT",
       body: JSON.stringify({ userId, progress }),
     });
+  }
+
+  async checkAuth(): Promise<{ success: boolean; user: User }> {
+    return this.request("/user/check");
   }
 }
 

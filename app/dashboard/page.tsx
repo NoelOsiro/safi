@@ -1,270 +1,91 @@
-"use client"
 
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { redirect } from 'next/navigation';
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { ArrowLeft, BookOpen, CheckCircle, Clock, Award, TrendingUp, Loader2, MessageCircle } from "lucide-react"
-import Link from "next/link"
 import { apiClient } from "@/lib/api-client"
+import { WelcomeHeader } from "../../components/dassboard/WelcomeHeader"
+import { ProgressCards } from "../../components/dassboard/ProgressCards"
+import { ModuleCard } from "../../components/dassboard/ModuleCard"
+import { QuickActions } from "../../components/dassboard/QuickActions"
+import { ErrorMessage } from "../../components/dassboard/ErrorMessage"
+import type { Module, ApiResponse } from "./types"
+import { getLoggedInUser } from "@/lib/server/appwrite"
+import { mockModules } from '@/lib/mock-data';
 
-interface Module {
-  id: string
-  title: string
-  description: string
-  icon: string
-  duration: string
-  level: string
-  image: string
-  progress?: number
-  status?: 'completed' | 'in-progress' | 'not-started'
-}
 
-interface ApiResponse {
-  success: boolean
-  modules: Module[]
-}
+export default async function DashboardPage() {
+  const user = await getLoggedInUser()
+  if (!user) {
+    redirect('/login')
+  }
 
-export default function DashboardPage() {
-  const [modules, setModules] = useState<Module[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  let modules: Module[] = [];
+  let error: string | null = null;
 
-  useEffect(() => {
-    const fetchModules = async () => {
-      try {
-        const response = await apiClient.getModules() as ApiResponse
-        if (response?.success && Array.isArray(response.modules)) {
-          // Add mock progress and status for now - in a real app, this would come from the user's progress
-          const modulesWithProgress = response.modules.map((module: Module, index: number) => ({
-            ...module,
-            progress: index === 0 || index === 1 ? 100 : index === 2 ? 60 : 0,
-            status: (index <= 1 ? 'completed' : index === 2 ? 'in-progress' : 'not-started') as 'completed' | 'in-progress' | 'not-started'
-          }))
-          setModules(modulesWithProgress)
-        } else {
-          throw new Error('Invalid response format')
+  try { 
+    const response = {
+          success: true,
+          modules: mockModules,
         }
-      } catch (err) {
-        console.error('Failed to fetch modules:', err)
-        setError('Failed to load training modules. Please try again later.')
-      } finally {
-        setIsLoading(false)
-      }
+    if (!response.success) {
+      throw new Error('Failed to fetch modules');
     }
-
-    fetchModules()
-  }, [])
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 
-          data-testid="loading-spinner"
-          className="h-8 w-8 animate-spin text-emerald-600" 
-        />
-      </div>
-    )
+    
+    if (Array.isArray(response.modules)) {
+      // Add mock progress and status for now - in a real app, this would come from the user's progress
+      modules = response.modules.map((module, index: number) => ({
+        ...module,
+        progress: index === 0 || index === 1 ? 100 : index === 2 ? 60 : 0,
+        status: (index <= 1 ? 'completed' : index === 2 ? 'in-progress' : 'not-started') as 'completed' | 'in-progress' | 'not-started'
+      }));
+    } else {
+      throw new Error('Invalid response format');
+    }
+  } catch (err) {
+    console.error('Failed to fetch modules:', err);
+    error = 'Failed to load training modules. Please try again later.';
   }
 
   if (error) {
-    return (
-      <div className="text-center my-12">
-        <p className="text-red-500 mb-4">{error}</p>
-        <Button onClick={() => window.location.reload()}>Try Again</Button>
-      </div>
-    )
+    return <ErrorMessage message={error} />
   }
 
   const completedModules = modules.filter(module => module.status === 'completed').length
-  const overallProgress = Math.round(modules.reduce((acc, module) => acc + (module.progress || 0), 0) / modules.length)
+  const totalModules = modules.length
+  const overallProgress = Math.round(modules.reduce((acc, module) => acc + (module.progress || 0), 0) / totalModules)
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
+        {/* User Welcome */}
+        <WelcomeHeader user={user} />
+        
         {/* Progress Overview */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Overall Progress</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overallProgress}%</div>
-              <Progress value={overallProgress} className="mt-2" />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Modules Completed</CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">2/5</div>
-              <p className="text-xs text-muted-foreground">3 modules remaining</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Study Time</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">2.5h</div>
-              <p className="text-xs text-muted-foreground">This week</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Certification Ready</CardTitle>
-              <Award className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">75%</div>
-              <p className="text-xs text-muted-foreground">Almost there!</p>
-            </CardContent>
-          </Card>
-        </div>
+        <ProgressCards 
+          overallProgress={overallProgress}
+          completedModules={completedModules}
+          totalModules={totalModules}
+        />
 
         {/* Training Modules */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">Training Modules</h2>
-            <Badge variant="secondary">5 Modules Available</Badge>
+            <Badge variant="secondary">{totalModules} Modules Available</Badge>
           </div>
 
           <div className="grid gap-6">
             {modules.map((module) => (
-              <Card 
-                key={module.id}
-                data-testid="module-card"
-                className="hover:shadow-md transition-shadow group overflow-hidden p-6 cursor-pointer"
-                onClick={() => window.location.href = `/training/modules/${module.id}`}
-              >
-                <div className="relative">
-                  <CardHeader className="p-0">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-start space-x-4">
-                        <div className="text-3xl">{module.icon}</div>
-                        <div>
-                          <CardTitle className="text-lg">
-                            Module {module.id}: {module.title}
-                          </CardTitle>
-                          <CardDescription className="mt-1">{module.description}</CardDescription>
-                          <div className="flex items-center space-x-4 mt-3">
-                            <Badge
-                              variant={
-                                module.status === "completed"
-                                  ? "default"
-                                  : module.status === "in-progress"
-                                    ? "secondary"
-                                    : "outline"
-                              }
-                              className={
-                                module.status === "completed"
-                                  ? "bg-green-100 text-green-800 hover:bg-green-100"
-                                  : module.status === "in-progress"
-                                    ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-                                    : ""
-                              }
-                            >
-                              {module.status === "completed"
-                                ? "Completed"
-                                : module.status === "in-progress"
-                                  ? "In Progress"
-                                  : "Not Started"}
-                            </Badge>
-                            <span className="text-sm text-gray-500 flex items-center">
-                              <Clock className="h-4 w-4 mr-1" />
-                              {module.duration}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right ml-4">
-                        <div className="text-2xl font-bold text-gray-900">{module.progress}%</div>
-                        <Progress value={module.progress} className="w-20 mt-1" />
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="p-6 pt-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
-                        {module.status === "completed" && (
-                          <Button variant="outline" size="sm">
-                            <BookOpen className="h-4 w-4 mr-2" />
-                            Review
-                          </Button>
-                        )}
-                        {module.status === "in-progress" && (
-                          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-                            <BookOpen className="h-4 w-4 mr-2" />
-                            Continue
-                          </Button>
-                        )}
-                        {module.status === "not-started" && (
-                          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-                            <BookOpen className="h-4 w-4 mr-2" />
-                            Start Module
-                          </Button>
-                        )}
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.location.href = `/chat?module=${module.id}`;
-                          }}
-                        >
-                          <MessageCircle className="h-4 w-4 mr-2" />
-                          Ask AI
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </div>
-              </Card>
+              <ModuleCard 
+                key={module.id} 
+                module={module} 
+                href={`/training/modules/${module.id}`}
+              />
             ))}
           </div>
         </div>
 
         {/* Quick Actions */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card className="border-green-200">
-            <CardHeader>
-              <CardTitle className="text-green-800">Ready for Assessment?</CardTitle>
-              <CardDescription>Test your knowledge with our comprehensive food safety assessment</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button asChild className="w-full bg-green-600 hover:bg-green-700">
-                <Link href="/assessment">
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Take Assessment
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="border-blue-200">
-            <CardHeader>
-              <CardTitle className="text-blue-800">Need Help?</CardTitle>
-              <CardDescription>Chat with Mama Safi AI Coach for personalized guidance</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button asChild variant="outline" className="w-full border-blue-200 text-blue-700 hover:bg-blue-50">
-                <Link href="/chat">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Chat with AI Coach
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        <QuickActions />
       </div>
     </div>
   )
