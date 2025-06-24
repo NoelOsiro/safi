@@ -1,50 +1,61 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { BookOpen, MessageCircle, Clock } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { BookOpen, MessageCircle, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export interface Module {
-  id: string
-  title: string
-  description: string
-  icon: string
-  duration: string
-  level: string
-  image: string
-  progress?: number
-  status?: 'completed' | 'in-progress' | 'not-started'
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  duration: string;
+  level: string;
+  image: string;
+  progress?: number;
+  status?: "completed" | "in-progress" | "not-started";
 }
 
 interface ModuleCardProps {
-  module: Module
-  href: string
+  module: Module;
+  href: string;
 }
 
 export function ModuleCard({ module, href }: ModuleCardProps) {
   const handleChatClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    window.location.href = `/chat?module=${module.id}`
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    window.location.href = `/chat?module=${module.id}`;
+  };
 
   return (
-    <Card className="hover:shadow-md transition-shadow group overflow-hidden p-6" data-testid="module-card">
+    <Card
+      className="hover:shadow-md transition-shadow group overflow-hidden p-6"
+      data-testid="module-card"
+    >
       <div className="relative">
         <CardHeader className="p-0">
           <Link href={href} className="block w-full h-full">
-            <div className="flex justify-between items-start">
-              <div className="flex items-start space-x-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex flex-1 items-start space-x-4">
                 <div className="text-3xl">{module.icon}</div>
                 <div>
                   <CardTitle className="text-lg">
                     Module {module.id}: {module.title}
                   </CardTitle>
-                  <CardDescription className="mt-1">{module.description}</CardDescription>
-                  <div className="flex items-center space-x-4 mt-3">
+                  <CardDescription className="mt-1">
+                    {module.description}
+                  </CardDescription>
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
                     <Badge
                       variant={
                         module.status === "completed"
@@ -74,44 +85,43 @@ export function ModuleCard({ module, href }: ModuleCardProps) {
                   </div>
                 </div>
               </div>
-              <div className="text-right ml-4">
-                <div className="text-2xl font-bold text-gray-900">{module.progress ?? 0}%</div>
-                <Progress value={module.progress} className="w-20 mt-1" />
+              <div className="text-right sm:text-left">
+                <div className="text-xl font-bold text-gray-900">
+                  {module.progress ?? 0}%
+                </div>
+                <Progress
+                  value={module.progress}
+                  className="w-full sm:w-24 mt-1"
+                />
               </div>
             </div>
           </Link>
         </CardHeader>
 
         <CardContent className="p-6 pt-2">
-          <div className="flex items-center justify-between">
-            <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
-              {module.status === "completed" && (
-                <Button variant="outline" size="sm">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Review
-                </Button>
-              )}
-              {module.status === "in-progress" && (
-                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Continue
-                </Button>
-              )}
-              {module.status === "not-started" && (
-                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Start Module
-                </Button>
-              )}
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleChatClick}
-              >
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Ask AI
+          <div className="flex flex-wrap gap-2 justify-start sm:justify-between">
+            {module.status === "completed" && (
+              <Button variant="outline" size="sm">
+                <BookOpen className="h-4 w-4 mr-2" />
+                Review
               </Button>
-            </div>
+            )}
+            {module.status === "in-progress" && (
+              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                <BookOpen className="h-4 w-4 mr-2" />
+                Continue
+              </Button>
+            )}
+            {module.status === "not-started" && (
+              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                <BookOpen className="h-4 w-4 mr-2" />
+                Start Module
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={handleChatClick}>
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Ask AI
+            </Button>
           </div>
         </CardContent>
       </div>

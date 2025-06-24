@@ -1,25 +1,21 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { mockUsers } from "@/lib/mock-data"
+// app/auth/login/route.ts
+import { NextResponse } from "next/server"
+import { createClient } from "@/lib/supabase/server"
 
-export async function POST(request: NextRequest) {
-  try {
-    const { email, password } = await request.json()
+export async function GET() {
+  const supabase = await createClient()
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 800))
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "azure",
+    options: {
+      scopes: "email profile offline_access",
+      redirectTo: `${process.env.NEXTAUTH_URL}/api/auth/callback`, // set this in .env
+    },
+  })
 
-    // Find user (in real implementation, verify password hash)
-    const user = mockUsers.find((u) => u.email === email)
-
-    if (!user) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
-    }
-
-    return NextResponse.json({
-      success: true,
-      user,
-    })
-  } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  if (error) {
+    return NextResponse.redirect("/auth/error")
   }
+
+  return NextResponse.redirect(data.url)
 }

@@ -44,8 +44,8 @@ export const useAuthStore = create<AuthState>()(
           const { data, error } = await supabase.auth.signInWithOAuth({
             provider: "azure",
             options: {
-              scopes: "email profile",
-              
+              scopes: "email profile offline_access",
+              redirectTo: "http://localhost:3000/api/auth/callback",
               queryParams: {
                 prompt: "select_account",
               },

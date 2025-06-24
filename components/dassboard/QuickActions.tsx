@@ -5,7 +5,7 @@ import Link from "next/link"
 
 export function QuickActions() {
   return (
-    <div className="grid md:grid-cols-2 gap-6">
+    <div className="mt-4 grid md:grid-cols-2 gap-6">
       <Card className="border-green-200">
         <CardHeader>
           <CardTitle className="text-green-800">Ready for Assessment?</CardTitle>
