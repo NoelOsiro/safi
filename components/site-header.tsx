@@ -1,123 +1,106 @@
 "use client"
 
-import { useEffect } from 'react'
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Button } from "./ui/button"
-import { usePathname, useRouter } from "next/navigation"
-import { LogIn, UserPlus, Loader2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { LogOut, User, Settings } from "lucide-react"
 import { useAuthStore } from "@/lib/stores/auth-store"
 
-export function SiteHeader() {
-  const { user, isAuthenticated, isLoading, logout, checkAuth } = useAuthStore()
-  const pathname = usePathname()
+export default function SiteHeader() {
   const router = useRouter()
+  const { user, isAuthenticated, isLoading, signOut } = useAuthStore()
+  const [mounted, setMounted] = useState(false)
 
-  // Check auth status on component mount
   useEffect(() => {
-    const verifyAuth = async () => {
-      try {
-        await checkAuth()
-      } catch (error) {
-        console.error('Auth check failed:', error)
-      }
-    }
-    
-    verifyAuth()
-  }, [checkAuth])
+    setMounted(true)
+  }, [])
 
-  // Don't show header on the landing page
-  if (pathname === "/") return null
-  
   const handleSignOut = async () => {
-    try {
-      await logout()
-      router.push('/login')
-    } catch (error) {
-      console.error('Error signing out:', error)
-    }
+    await signOut()
+  }
+
+  if (!mounted) {
+    return (
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 items-center">
+          <div className="mr-4 hidden md:flex">
+            <Link className="mr-6 flex items-center space-x-2" href="/">
+              <span className="hidden font-bold sm:inline-block">MAMA SAFI</span>
+            </Link>
+          </div>
+          <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+            <div className="w-full flex-1 md:w-auto md:flex-none" />
+            <nav className="flex items-center">
+              <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse" />
+            </nav>
+          </div>
+        </div>
+      </header>
+    )
   }
 
   return (
-    <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/80 sticky top-0 z-50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 md:h-20">
-          <div className="flex items-center flex-shrink-0">
-            <Link 
-              href="/" 
-              className="flex items-center space-x-2 group"
-            >
-              <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">
-                Mama Safi
-              </span>
-            </Link>
-          </div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-1 ml-10">
-            {[
-              { name: 'Dashboard', href: '/dashboard' },
-              { name: 'Training', href: '/training' },
-              { name: 'Assessment', href: '/assessment' },
-              { name: 'AI Coach', href: '/chat' },
-            ].map((item) => {
-              const isActive = pathname.startsWith(item.href);
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                    isActive 
-                      ? 'text-emerald-600 bg-emerald-50' 
-                      : 'text-gray-700 hover:text-emerald-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {item.name}
-                  {isActive && (
-                    <span className="block h-0.5 w-6 bg-emerald-500 rounded-full mx-auto mt-1" />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="flex items-center space-x-3">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center">
+        <div className="mr-4 hidden md:flex">
+          <Link className="mr-6 flex items-center space-x-2" href="/">
+            <span className="hidden font-bold sm:inline-block">MAMA SAFI</span>
+          </Link>
+        </div>
+        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+          <div className="w-full flex-1 md:w-auto md:flex-none" />
+          <nav className="flex items-center">
             {isLoading ? (
-              <Button variant="ghost" size="sm" disabled>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Loading...
-              </Button>
-            ) : isAuthenticated ? (
-              <div className="flex items-center space-x-2">
-                <Link href="/profile">
-                  <Button variant="outline" size="sm">
-                    Profile
+              <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse" />
+            ) : isAuthenticated && user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+                      <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
                   </Button>
-                </Link>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleSignOut}
-                >
-                  Sign out
-                </Button>
-              </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user.name}</p>
+                      <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push("/profile")}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
-              <div className="flex items-center space-x-2">
-                <Link href="/login">
-                  <Button variant="outline" size="sm" className="flex items-center gap-1">
-                    <LogIn className="h-4 w-4" />
-                    Sign in
-                  </Button>
-                </Link>
-                <Link href="/signup">
-                  <Button size="sm" className="flex items-center gap-1">
-                    <UserPlus className="h-4 w-4" />
-                    Sign up
-                  </Button>
-                </Link>
-              </div>
+              <Button onClick={() => router.push("/login")} variant="default" size="sm">
+                Sign In
+              </Button>
             )}
-          </div>
+          </nav>
         </div>
       </div>
     </header>

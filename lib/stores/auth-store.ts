@@ -1,34 +1,20 @@
 import { create } from "zustand"
 import { persist, createJSONStorage } from "zustand/middleware"
-import { User } from "@/lib/types/user.types"
-import { client, account } from '@/lib/appwrite';
-import { OAuthProvider } from "node-appwrite";
-import { apiClient } from "../api-client";
-
-// Helper function to safely get storage
-const getStorage = () => {
-  // Only access sessionStorage in browser environment
-  if (typeof window === 'undefined') {
-    return {
-      getItem: () => null,
-      setItem: () => {},
-      removeItem: () => {},
-      getState: () => ({}),
-      setState: () => {}
-    };
-  }
-  return sessionStorage;
-};
+import type { User } from "@/lib/types/user.types"
+import { supabase } from "@/lib/supabase/client"
 
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
+  isInitialized: boolean
   error: string | null
-  login: (redirectUrl?: string) => Promise<void>
-  logout: () => Promise<void>
+  signInWithMicrosoft: () => Promise<void>
+  signOut: () => Promise<void>
   checkAuth: () => Promise<void>
-  updateUser: (userId: string, userData: Partial<User>) => Promise<void>
+  updateUser: (userData: Partial<User>) => Promise<void>
+  setInitialized: (initialized: boolean) => void
+  clearError: () => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -37,137 +23,231 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isLoading: false,
+      isInitialized: false,
       error: null,
 
-      login: async (redirectUrl = '') => {
+      setInitialized: (initialized: boolean) => {
+        set({ isInitialized: initialized })
+      },
+
+      clearError: () => {
+        set({ error: null })
+      },
+
+      signInWithMicrosoft: async () => {
         set({ isLoading: true, error: null })
+
         try {
-          account.createOAuth2Token(
-            OAuthProvider.Microsoft,
-            `${redirectUrl}/api/auth/callback`,
-            `${redirectUrl}/login`,
-            
-          )
-          // Client-side flow will handle the rest
-        } catch (error) {
-          console.error('Login error:', error)
-          set({ 
-            error: error instanceof Error ? error.message : 'Failed to sign in',
-            isLoading: false 
+          const { error } = await supabase.auth.signInWithOAuth({
+            provider: "azure",
+            options: {
+              scopes: "email profile openid",
+              redirectTo: `${window.location.origin}/auth/callback`,
+            },
+          })
+
+          if (error) {
+            throw error
+          }
+        } catch (error: any) {
+          console.error("Microsoft sign-in error:", error)
+          set({
+            error: error.message || "Failed to sign in with Microsoft",
+            isLoading: false,
           })
         }
       },
 
-      logout: async () => {
+      signOut: async () => {
         try {
-          // Clear the local state first to prevent any race conditions
-          set({
-            user: null,
-            isAuthenticated: false,
-            isLoading: true,
-            error: null,
-          });
-          
-          // Call the logout API
-          await apiClient.logout();
-          
-          // Force a hard refresh to clear any cached data and ensure clean state
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login';
+          set({ isLoading: true, error: null })
+
+          const { error } = await supabase.auth.signOut()
+
+          if (error) {
+            console.error("Sign out error:", error)
           }
-        } catch (error) {
-          console.error('Logout error:', error);
-          // Even if logout API fails, clear the local state
+
+          // Clear state regardless of error
           set({
             user: null,
             isAuthenticated: false,
             isLoading: false,
-            error: 'Failed to log out. Please try again.',
-          });
-          
-          // Still redirect to login page
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login';
+            error: null,
+          })
+
+          // Clear persisted storage
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem("auth-storage")
+            window.location.href = "/login"
+          }
+        } catch (error: any) {
+          console.error("Sign out error:", error)
+
+          // Clear state even on error
+          set({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: null,
+          })
+
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem("auth-storage")
+            window.location.href = "/login"
           }
         }
       },
 
       checkAuth: async () => {
-        set({ isLoading: true })
+        const currentState = get()
+
+        if (currentState.isLoading) {
+          return
+        }
+
+        set({ isLoading: true, error: null })
+
         try {
-          // First check if there's an existing session
-          try {
-            const { user, success } = await apiClient.checkAuth()
-            if (success && user) {
-              set({
-                user,
-                isAuthenticated: true,
-                isLoading: false,
-                error: null,
-              })
-              return
+          const {
+            data: { session },
+            error,
+          } = await supabase.auth.getSession()
+
+          if (error) {
+            throw error
+          }
+
+          if (session?.user) {
+            // Get user profile from profiles table
+            const { data: profile } = await supabase.from("profiles").select("*").eq("id", session.user.id).single()
+
+            const user: User = {
+              id: session.user.id,
+              email: session.user.email!,
+              name:
+                session.user.user_metadata.name ||
+                session.user.user_metadata.full_name ||
+                session.user.email!.split("@")[0],
+              fullName: session.user.user_metadata.full_name || session.user.user_metadata.name,
+              avatar:
+                session.user.user_metadata.avatar_url ||
+                session.user.user_metadata.picture ||
+                `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(session.user.email!)}`,
+              phone: profile?.phone || "",
+              businessType: profile?.business_type || "",
+              location: profile?.location || "",
+              experience: profile?.experience || "",
+              role: profile?.role || "user",
+              onboardingCompleted: profile?.onboarding_completed || false,
+              progress: profile?.progress || {
+                modulesCompleted: 0,
+                totalModules: 6,
+                assessmentScore: 0,
+                certificationReady: 0,
+                studyTime: 0,
+              },
+              created_at: session.user.created_at,
+              updated_at: session.user.updated_at,
+              email_verified: !!session.user.email_confirmed_at,
             }
-            if (!success || !user) {
-              set({
-                user: null,
-                isAuthenticated: false,
-                isLoading: false,
-                error: null,
-              })
-              return
-            }
-          } catch (error) {
-            // If we get a 401 or similar, it means no valid session exists
-            console.log('No active session found')
-            }
-          
-          // If we get here, either no user was returned or there was an error
-          set({ 
-            isAuthenticated: false, 
+
+            set({
+              user,
+              isAuthenticated: true,
+              isLoading: false,
+              isInitialized: true,
+              error: null,
+            })
+          } else {
+            set({
+              user: null,
+              isAuthenticated: false,
+              isLoading: false,
+              isInitialized: true,
+              error: null,
+            })
+          }
+        } catch (error: any) {
+          console.error("Auth check error:", error)
+          set({
+            isAuthenticated: false,
             user: null,
+            isLoading: false,
+            isInitialized: true,
             error: null,
-            isLoading: false 
-          })
-        } catch (error) {
-          console.error('Auth check error:', error)
-          set({ 
-            isAuthenticated: false, 
-            user: null,
-            error: 'Failed to check authentication status',
-            isLoading: false
           })
         }
       },
 
-      updateUser: async (userId: string, userData: Partial<User>) => {
-        set((state) => ({
-          user: state.user ? { ...state.user, ...userData } : null,
-        }));
+      updateUser: async (userData: Partial<User>) => {
+        const currentState = get()
+        if (!currentState.user) return
+
+        try {
+          // Update profile in database
+          const { error } = await supabase
+            .from("profiles")
+            .update({
+              phone: userData.phone,
+              business_type: userData.businessType,
+              location: userData.location,
+              experience: userData.experience,
+              onboarding_completed: userData.onboardingCompleted,
+              progress: userData.progress,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", currentState.user.id)
+
+          if (error) {
+            throw error
+          }
+
+          // Update local state
+          set((state) => ({
+            user: state.user ? { ...state.user, ...userData } : null,
+          }))
+        } catch (error: any) {
+          console.error("Update user error:", error)
+          set({ error: error.message })
+        }
       },
     }),
     {
-      name: 'auth-storage',
-      skipHydration: true, // Skip initial hydration to prevent SSR issues
-      storage: createJSONStorage(() => getStorage()),
+      name: "auth-storage",
+      storage: createJSONStorage(() => {
+        if (typeof window === "undefined") {
+          return {
+            getItem: () => null,
+            setItem: () => {},
+            removeItem: () => {},
+          }
+        }
+        return sessionStorage
+      }),
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.isInitialized = true
+          state.isLoading = false
+        }
+      },
     },
   ),
 )
 
-// Initialize auth state when store is created
-if (typeof window !== 'undefined') {
-  useAuthStore.getState().checkAuth()
-  
+// Initialize auth state when store is created (client-side only)
+if (typeof window !== "undefined") {
   // Listen to auth state changes
-  client.subscribe('account', (response) => {
-    if (response.events.includes('users.*.sessions.*.create')) {
-      // User signed in
-      useAuthStore.getState().checkAuth()
-    } else if (response.events.includes('users.*.sessions.*.delete')) {
-      // User signed out
+  supabase.auth.onAuthStateChange((event, session) => {
+    const state = useAuthStore.getState()
+
+    if (event === "SIGNED_IN" && session) {
+      state.checkAuth()
+    } else if (event === "SIGNED_OUT") {
       useAuthStore.setState({
         user: null,
         isAuthenticated: false,
@@ -176,4 +256,13 @@ if (typeof window !== 'undefined') {
       })
     }
   })
+
+  // Initialize after a short delay
+  setTimeout(() => {
+    const state = useAuthStore.getState()
+    if (!state.isInitialized) {
+      state.setInitialized(true)
+    }
+    state.checkAuth()
+  }, 100)
 }

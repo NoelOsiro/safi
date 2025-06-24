@@ -19,29 +19,29 @@ This is a training platform built with Next.js 13+ and Appwrite for authenticati
 
 Create a `.env.local` file in the root of your project and add the following environment variables:
 
-```env
+\`\`\`env
 # App
 NEXT_PUBLIC_APPWRITE_ENDPOINT=your_appwrite_endpoint
 NEXT_PUBLIC_APPWRITE_PROJECT_ID=your_project_id
 APPWRITE_API_KEY=your_api_key
 NEXT_PUBLIC_API_URL=your_api_url
-```
+\`\`\`
 
 ### Installation
 
 1. Clone the repository
 2. Install dependencies:
-   ```bash
+   \`\`\`bash
    npm install
    # or
    yarn install
-   ```
+   \`\`\`
 3. Start the development server:
-   ```bash
+   \`\`\`bash
    npm run dev
    # or
    yarn dev
-   ```
+   \`\`\`
 
 ## Features
 

@@ -1,4 +1,4 @@
-import { User } from "./types/user.types"
+import type { User } from "./types/user.types"
 
 export interface Review {
   id: string
@@ -17,14 +17,11 @@ export interface Review {
   }
 }
 
-interface CreateReviewResponse {
+interface AuthCheckResponse {
   success: boolean
-  review: Review
-}
-
-interface ReviewsResponse {
-  success: boolean
-  reviews: Review[]
+  user: User | null
+  authenticated: boolean
+  error?: string
 }
 
 class ApiClient {
@@ -35,19 +32,18 @@ class ApiClient {
   }
 
   private getFullUrl(endpoint: string): string {
-    // If baseUrl is not set, use a relative URL
-    const basePath = this.baseUrl || ''
-    const baseUrl = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
+    const basePath = this.baseUrl || ""
+    const baseUrl = basePath.endsWith("/") ? basePath.slice(0, -1) : basePath
+    const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`
     return `${baseUrl}/api${cleanEndpoint}`
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = this.getFullUrl(endpoint)
-    
+
     const headers = new Headers()
-    headers.set('Content-Type', 'application/json')
-    
+    headers.set("Content-Type", "application/json")
+
     if (options.headers) {
       Object.entries(options.headers).forEach(([key, value]) => {
         if (value) headers.set(key, String(value))
@@ -57,80 +53,88 @@ class ApiClient {
     const config: RequestInit = {
       ...options,
       headers,
-      credentials: 'include' as RequestCredentials
+      credentials: "include" as RequestCredentials,
     }
 
-    const response = await fetch(url, config)
+    try {
+      const response = await fetch(url, config)
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || "API request failed")
+      // Handle different response types
+      const contentType = response.headers.get("content-type")
+
+      if (!contentType?.includes("application/json")) {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        return {} as T
+      }
+
+      const data = await response.json()
+
+      // For auth endpoints, don't throw on 401 - return the response
+      if (endpoint.includes("/user/check") && response.status === 401) {
+        return data as T
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP error! status: ${response.status}`)
+      }
+
+      return data
+    } catch (error) {
+      // For auth check, return a consistent failure response
+      if (endpoint.includes("/user/check")) {
+        return {
+          success: false,
+          user: null,
+          authenticated: false,
+          error: error instanceof Error ? error.message : "Auth check failed",
+        } as T
+      }
+
+      console.error(`API request failed for ${endpoint}:`, error)
+      throw error
     }
-
-    return response.json()
   }
 
   // Auth endpoints
-  async signup(userData: {
-    fullName: string
-    email: string
-    phone: string
-    businessType: string
-    location: string
-    experience: string
-    agreeToTerms: boolean
-  }): Promise<{
-    success: boolean
-    user: {
-      id: string
-      fullName: string
-      email: string
-      phone: string
-      businessType: string
-      location: string
-      experience: string
-      avatar: string
-      onboardingCompleted: boolean
-      progress: {
-        modulesCompleted: number
-        totalModules: number
-        assessmentScore: number
-        certificationReady: number
-        studyTime: number
+  async checkAuth(): Promise<AuthCheckResponse> {
+    try {
+      const response = await this.request<AuthCheckResponse>("/user/check")
+      return response
+    } catch (error) {
+      return {
+        success: false,
+        user: null,
+        authenticated: false,
+        error: error instanceof Error ? error.message : "Auth check failed",
       }
     }
-  }> {
-    return this.request("/auth/signup", {
-      method: "POST",
-      body: JSON.stringify(userData),
-    })
   }
 
-  async login(credentials: { email: string; password: string }) {
-    return this.request("/auth/login", {
+  async logout(): Promise<{ success: boolean; message?: string }> {
+    return this.request("/user/logout", {
       method: "POST",
-      body: JSON.stringify(credentials),
     })
   }
 
   // Module endpoints
   async getModules() {
     return this.request<{
-      success: boolean;
+      success: boolean
       modules: Array<{
-        id: string;
-        title: string;
-        description: string;
-        icon: string;
-        duration: string;
-        level: string;
-        image: string;
-        progress?: number;
-        status?: 'completed' | 'in-progress' | 'not-started';
-      }>;
-    }>("/module");
+        id: string
+        title: string
+        description: string
+        icon: string
+        duration: string
+        level: string
+        image: string
+        progress?: number
+        status?: "completed" | "in-progress" | "not-started"
+      }>
+    }>("/module")
   }
-
 
   async getModule(id: string) {
     return this.request<{
@@ -158,20 +162,21 @@ class ApiClient {
 
   // Review endpoints
   async getReviews(moduleId: string): Promise<{ success: boolean; reviews: Review[] }> {
-    const response = await this.request<{ success: boolean; reviews: Review[] }>(`/reviews?moduleId=${moduleId}`);
-    return response;
+    return this.request<{ success: boolean; reviews: Review[] }>(`/reviews?moduleId=${moduleId}`)
   }
 
-  async createReview(reviewData: Omit<Review, 'id' | 'createdAt' | 'user'> & { userId: string; userName: string; userAvatar: string }): Promise<CreateReviewResponse> {
-    return this.request<CreateReviewResponse>('/reviews', {
-      method: 'POST',
+  async createReview(
+    reviewData: Omit<Review, "id" | "createdAt" | "user"> & { userId: string; userName: string; userAvatar: string },
+  ) {
+    return this.request<{ success: boolean; review: Review }>("/reviews", {
+      method: "POST",
       body: JSON.stringify(reviewData),
-    });
+    })
   }
 
   // Admin endpoints
   async getAdminStats() {
-    return this.request("/admin/stats");
+    return this.request("/admin/stats")
   }
 
   // User endpoints
@@ -179,18 +184,8 @@ class ApiClient {
     return this.request("/user/progress", {
       method: "PUT",
       body: JSON.stringify({ userId, progress }),
-    });
-  }
-
-  async checkAuth(): Promise<{ success: boolean; user: User }> {
-    return this.request("/user/check");
-  }
-
-  async logout() {
-    return this.request("/user/logout", {
-      method: "POST",
-    });
+    })
   }
 }
 
-export const apiClient = new ApiClient();
+export const apiClient = new ApiClient()

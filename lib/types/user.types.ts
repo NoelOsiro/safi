@@ -1,98 +1,72 @@
 export interface Progress {
-  modulesCompleted?: number;
-  totalModules?: number;
+  modulesCompleted?: number
+  totalModules?: number
+  assessmentScore?: number
+  certificationReady?: number
+  studyTime?: number
 }
 
-import { Models } from 'appwrite';
-
-export type User = {
-  // Required fields
-  $id: string;
-  name: string;
-  email: string;
-  
-  // Optional fields with Appwrite defaults
-  $createdAt?: string;
-  $updatedAt?: string;
-  prefs?: Models.Preferences;
-  
-  // Our custom fields
-  role?: 'admin' | 'user' | string;
-  emailVerified?: boolean;
-  image?: string;
-  avatar?: string;
-  phone?: string | null;
-  businessType?: string | null;
-  location?: string | null;
-  experience?: string | null;
-  progress?: Progress;
-  onboardingCompleted?: boolean;
-  
-  // Allow any other string keys
-  [key: string]: any;
-};
-
-// Create a base interface that matches the User type but makes all fields optional
-type PartialUser = Partial<Omit<User, 'id'>> & {
-  id: string;
-  name: string;
-  email: string;
-};
-
-export interface AppUser extends PartialUser {
-  phone?: string;
-  avatar?: string;
-  image?: string; // For compatibility with auth providers that use 'image' instead of 'avatar'
-  businessType?: string;
-  location?: string;
-  experience?: string;
-  progress?: Progress;
+export interface User {
+  id: string
+  email: string
+  name: string
+  fullName?: string
+  avatar?: string
+  phone?: string
+  businessType?: string
+  location?: string
+  experience?: string
+  role?: "admin" | "user"
+  onboardingCompleted?: boolean
+  progress?: Progress
+  created_at?: string
+  updated_at?: string
+  email_verified?: boolean
 }
 
-export function isAppUser(user: any): user is AppUser {
-  return (
-    user !== null &&
-    typeof user === 'object' &&
-    typeof user.id === 'string' &&
-    typeof user.name === 'string' &&
-    typeof user.email === 'string'
-  );
+export interface AuthUser {
+  id: string
+  email: string
+  user_metadata: {
+    name?: string
+    full_name?: string
+    avatar_url?: string
+    picture?: string
+  }
+  app_metadata: {
+    provider?: string
+    providers?: string[]
+  }
+  created_at: string
+  updated_at: string
+  email_confirmed_at?: string
 }
 
-export function createSafeAppUser(
-  user: any,
-  sessionUser?: Partial<AppUser> & { id?: string | null }
-): AppUser | null {
-  if (!user && !sessionUser) return null;
-  
-  const baseUser = user || {};
-  const session = sessionUser || {};
-  
+export function mapSupabaseUserToUser(authUser: AuthUser, profile?: any): User {
   return {
-    id: baseUser.id || session.id || '',
-    name: baseUser.name || session.name || 'Guest User',
-    email: baseUser.email || session.email || '',
-    phone: baseUser.phone || '',
-    businessType: baseUser.businessType || '',
-    location: baseUser.location || '',
-    experience: baseUser.experience || '',
-    // Use avatar from either source, with priority to baseUser
-    avatar: baseUser.avatar || session.avatar || session.image,
-    progress: baseUser.progress || { modulesCompleted: 0, totalModules: 0 },
-    // Include image for backward compatibility
-    image: baseUser.image || session.image || session.avatar
-  };
-}
-
-export function validateAppUser(user: unknown): AppUser {
-  if (!user) throw new Error('User is required');
-  if (typeof user !== 'object') throw new Error('User must be an object');
-  
-  const userObj = user as Record<string, unknown>;
-  
-  if (!userObj.id || typeof userObj.id !== 'string') throw new Error('User ID is required');
-  if (!userObj.name || typeof userObj.name !== 'string') throw new Error('User name is required');
-  if (!userObj.email || typeof userObj.email !== 'string') throw new Error('User email is required');
-  
-  return user as AppUser;
+    id: authUser.id,
+    email: authUser.email,
+    name: authUser.user_metadata.name || authUser.user_metadata.full_name || authUser.email.split("@")[0],
+    fullName: authUser.user_metadata.full_name || authUser.user_metadata.name,
+    avatar:
+      authUser.user_metadata.avatar_url ||
+      authUser.user_metadata.picture ||
+      `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(authUser.email)}`,
+    phone: profile?.phone || "",
+    businessType: profile?.business_type || "",
+    location: profile?.location || "",
+    experience: profile?.experience || "",
+    role: profile?.role || "user",
+    onboardingCompleted: profile?.onboarding_completed || false,
+    progress: profile?.progress || {
+      modulesCompleted: 0,
+      totalModules: 6,
+      assessmentScore: 0,
+      certificationReady: 0,
+      studyTime: 0,
+    },
+    created_at: authUser.created_at,
+    updated_at: authUser.updated_at,
+    email_verified: !!authUser.email_confirmed_at,
+  }
 }

@@ -1,79 +1,69 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { getLoggedInUser } from './lib/server/appwrite'
+import { createClient } from "@/lib/supabase/server"
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
 // Public paths that don't require authentication
 const publicPaths = [
-  '/',
-  '/login',
-  '/api/auth',
-  '/_next',
-  '/favicon.ico',
-  '/images',
-  '/fonts',
-  '/manifest.json',
-  '/api/public',
+  "/",
+  "/login",
+  "/signup",
+  "/auth",
+  "/_next",
+  "/favicon.ico",
+  "/images",
+  "/fonts",
+  "/manifest.json",
+  "/public",
 ]
 
-// Paths that should redirect to dashboard if user is authenticated
-const authPaths = ['/profile', '/training']
+// Protected paths that require authentication
+const protectedPaths = ["/dashboard", "/profile", "/training", "/assessment", "/chat", "/admin", "/onboarding"]
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Allow public paths
-  if (publicPaths.some(path => pathname.startsWith(path))) {
+  // Always allow public paths and API routes
+  if (publicPaths.some((path) => pathname.startsWith(path)) || pathname.startsWith("/api/")) {
+    return NextResponse.next()
+  }
+
+  // Check if this is a protected path
+  const isProtectedPath = protectedPaths.some((path) => pathname.startsWith(path))
+
+  if (!isProtectedPath) {
     return NextResponse.next()
   }
 
   try {
-    // Check for existing session
-    const { user, error } = await getLoggedInUser()
-    
-    // If user is on an auth page but already logged in, redirect to dashboard
-    if (authPaths.some(path => pathname.startsWith(path))) {
-      if (user) {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
-      }
-      return NextResponse.next()
-    }
+    const supabase = await createClient()
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession()
 
-    // If no session and trying to access protected route, redirect to login
-    if (!user) {
-      const loginUrl = new URL('/login', request.url)
-      loginUrl.searchParams.set('redirect', pathname)
+    if (error || !session) {
+      // No valid session - redirect to login
+      const loginUrl = new URL("/login", request.url)
+      if (pathname !== "/login") {
+        loginUrl.searchParams.set("redirect", pathname)
+      }
       return NextResponse.redirect(loginUrl)
     }
 
-    // Add user to request headers for API routes
-    const requestHeaders = new Headers(request.headers)
-    if (user?.$id) {
-      requestHeaders.set('x-user-id', user.$id)
-    }
-
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    })
+    // Valid session - allow access
+    return NextResponse.next()
   } catch (error) {
-    console.error('Authentication error:', error)
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('redirect', pathname)
+    console.error("Middleware error:", error)
+
+    // On error, redirect to login for protected paths
+    const loginUrl = new URL("/login", request.url)
+    if (pathname !== "/login") {
+      loginUrl.searchParams.set("redirect", pathname)
+    }
     return NextResponse.redirect(loginUrl)
   }
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api/auth (auth routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    '/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 }
