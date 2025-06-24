@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import  authService  from './lib/services/auth.service'
+import { getLoggedInUser } from './lib/server/appwrite'
 
 // Public paths that don't require authentication
 const publicPaths = [
@@ -13,11 +13,10 @@ const publicPaths = [
   '/fonts',
   '/manifest.json',
   '/api/public',
-  '/profile'
 ]
 
 // Paths that should redirect to dashboard if user is authenticated
-const authPaths = ['/login', '/signup']
+const authPaths = ['/profile', '/training']
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -29,18 +28,18 @@ export async function middleware(request: NextRequest) {
 
   try {
     // Check for existing session
-    const session = await authService.getCurrentUser()
+    const { user, error } = await getLoggedInUser()
     
     // If user is on an auth page but already logged in, redirect to dashboard
     if (authPaths.some(path => pathname.startsWith(path))) {
-      if (session) {
+      if (user) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
       }
       return NextResponse.next()
     }
 
     // If no session and trying to access protected route, redirect to login
-    if (!session) {
+    if (!user) {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
@@ -48,7 +47,9 @@ export async function middleware(request: NextRequest) {
 
     // Add user to request headers for API routes
     const requestHeaders = new Headers(request.headers)
-    requestHeaders.set('x-user-id', session.userId)
+    if (user?.$id) {
+      requestHeaders.set('x-user-id', user.$id)
+    }
 
     return NextResponse.next({
       request: {

@@ -13,8 +13,8 @@ import { mockModules } from '@/lib/mock-data';
 
 
 export default async function DashboardPage() {
-  const user = await getLoggedInUser()
-  if (!user) {
+  const { user, error: authError } = await getLoggedInUser()
+  if (authError || !user) {
     redirect('/login')
   }
 

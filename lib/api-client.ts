@@ -185,6 +185,12 @@ class ApiClient {
   async checkAuth(): Promise<{ success: boolean; user: User }> {
     return this.request("/user/check");
   }
+
+  async logout() {
+    return this.request("/user/logout", {
+      method: "POST",
+    });
+  }
 }
 
 export const apiClient = new ApiClient();

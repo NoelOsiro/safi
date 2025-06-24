@@ -1,24 +1,36 @@
 "use client"
 
+import { useEffect } from 'react'
 import Link from "next/link"
 import { Button } from "./ui/button"
 import { usePathname, useRouter } from "next/navigation"
 import { LogIn, UserPlus, Loader2 } from "lucide-react"
-import  authService  from "@/lib/services/auth.service"
 import { useAuthStore } from "@/lib/stores/auth-store"
 
 export function SiteHeader() {
-  const { user, isAuthenticated, isLoading } = useAuthStore()
-  console.log(user)
+  const { user, isAuthenticated, isLoading, logout, checkAuth } = useAuthStore()
   const pathname = usePathname()
   const router = useRouter()
+
+  // Check auth status on component mount
+  useEffect(() => {
+    const verifyAuth = async () => {
+      try {
+        await checkAuth()
+      } catch (error) {
+        console.error('Auth check failed:', error)
+      }
+    }
+    
+    verifyAuth()
+  }, [checkAuth])
 
   // Don't show header on the landing page
   if (pathname === "/") return null
   
   const handleSignOut = async () => {
     try {
-      await authService.signOut()
+      await logout()
       router.push('/login')
     } catch (error) {
       console.error('Error signing out:', error)

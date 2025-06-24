@@ -37,9 +37,40 @@ export async function createAdminClient() {
 
 export async function getLoggedInUser() {
   try {
+    let error: string | null = null;
     const { account } = await createSessionClient();
-    return await account.get();
+    const user = await account.get();
+    // Ensure we have a valid user object
+    if (user && user.$id) {
+      return { user, error };
+    }
+    return { user: null, error };
   } catch (error) {
-    return null;
+    return { user: null, error };
+  }
+}
+
+export async function logout() {
+  try {
+    
+    const { account } = await createSessionClient();
+    // Get current session first
+    try {
+      await account.getSession('current');
+      // If we get here, session exists, so delete it
+      await account.deleteSession('current');
+    } catch (error) {
+      // Session doesn't exist or already deleted, which is fine
+      console.log('No active session to delete');
+    }
+    
+    // Clear the session cookie by setting an expired cookie
+    // Note: In server actions, we'll handle cookie clearing in the route handler
+    // as we can't directly set cookies in server components
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Logout error:', error);
+    return { success: false, error };
   }
 }

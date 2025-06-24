@@ -60,15 +60,35 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         try {
-          await account.deleteSession('current')
+          // Clear the local state first to prevent any race conditions
+          set({
+            user: null,
+            isAuthenticated: false,
+            isLoading: true,
+            error: null,
+          });
+          
+          // Call the logout API
+          await apiClient.logout();
+          
+          // Force a hard refresh to clear any cached data and ensure clean state
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
         } catch (error) {
-          console.error('Logout error:', error)
-        } finally {
+          console.error('Logout error:', error);
+          // Even if logout API fails, clear the local state
           set({
             user: null,
             isAuthenticated: false,
             isLoading: false,
-          })
+            error: 'Failed to log out. Please try again.',
+          });
+          
+          // Still redirect to login page
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
         }
       },
 
@@ -77,8 +97,8 @@ export const useAuthStore = create<AuthState>()(
         try {
           // First check if there's an existing session
           try {
-            const { user } = await apiClient.checkAuth()
-            if (user) {
+            const { user, success } = await apiClient.checkAuth()
+            if (success && user) {
               set({
                 user,
                 isAuthenticated: true,
@@ -87,10 +107,19 @@ export const useAuthStore = create<AuthState>()(
               })
               return
             }
+            if (!success || !user) {
+              set({
+                user: null,
+                isAuthenticated: false,
+                isLoading: false,
+                error: null,
+              })
+              return
+            }
           } catch (error) {
             // If we get a 401 or similar, it means no valid session exists
             console.log('No active session found')
-          }
+            }
           
           // If we get here, either no user was returned or there was an error
           set({ 

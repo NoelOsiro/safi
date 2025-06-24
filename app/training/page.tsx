@@ -1,80 +1,71 @@
-"use client"
-
-import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { BookOpen, CheckCircle, Clock, Award, ChevronRight, Loader2, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { apiClient } from "@/lib/api-client"
+import { getLoggedInUser } from "@/lib/server/appwrite"
+import { redirect } from "next/navigation"
+import { ErrorMessage } from "@/components/dassboard/ErrorMessage"
+import { Module } from "../dashboard/types"
+import { mockModules } from "@/lib/mock-data"
 
-interface Module {
-  id: string
-  title: string
-  description: string
-  icon: string
-  duration: string
-  level: string
-  image: string
-  progress?: number
-  status?: 'completed' | 'in-progress' | 'not-started'
-}
+
 
 interface ApiResponse {
   success: boolean
   modules: Module[]
 }
 
-export default function TrainingPage() {
-  const [modules, setModules] = useState<Module[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+export default async function TrainingPage() {
 
-  useEffect(() => {
-    const fetchModules = async () => {
-      try {
-        const response = await apiClient.getModules() as ApiResponse
-        if (response?.success && Array.isArray(response.modules)) {
-          // Add mock progress and status for now - in a real app, this would come from the user's progress
-          const modulesWithProgress = response.modules.map((module: Module, index: number) => ({
-            ...module,
-            progress: index === 0 ? 100 : index === 1 ? 60 : 0,
-            status: (index === 0 ? 'completed' : index === 1 ? 'in-progress' : 'not-started') as 'completed' | 'in-progress' | 'not-started'
-          } as Module))
-          setModules(modulesWithProgress)
-        } else {
-          throw new Error('Invalid response format')
-        }
-      } catch (err) {
-        console.error('Failed to fetch modules:', err)
-        setError('Failed to load training modules. Please try again later.')
-      } finally {
-        setIsLoading(false)
-      }
+  const { user, error: authError } = await getLoggedInUser()
+    if (authError || !user) {
+      redirect('/login')
     }
 
-    fetchModules()
-  }, [])
+  let modules: Module[] = [];
+  let error: string | null = null;
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 
-          data-testid="loading-spinner"
-          className="h-8 w-8 animate-spin text-emerald-600" 
-        />
-      </div>
-    )
-  }
+  try { 
+      const response = {
+            success: true,
+            modules: mockModules,
+          }
+      if (!response.success) {
+        throw new Error('Failed to fetch modules');
+      }
+      
+      if (Array.isArray(response.modules)) {
+        // Add mock progress and status for now - in a real app, this would come from the user's progress
+        modules = response.modules.map((module, index: number) => ({
+          ...module,
+          progress: index === 0 || index === 1 ? 100 : index === 2 ? 60 : 0,
+          status: (index <= 1 ? 'completed' : index === 2 ? 'in-progress' : 'not-started') as 'completed' | 'in-progress' | 'not-started'
+        }));
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (err) {
+      console.error('Failed to fetch modules:', err);
+      error = 'Failed to load training modules. Please try again later.';
+    }
+
+
+  // if (isLoading) {
+  //   return (
+  //     <div className="flex items-center justify-center min-h-[60vh]">
+  //       <Loader2 
+  //         data-testid="loading-spinner"
+  //         className="h-8 w-8 animate-spin text-emerald-600" 
+  //       />
+  //     </div>
+  //   )
+  // }
 
   if (error) {
-    return (
-      <div className="text-center my-12">
-        <p className="text-red-500 mb-4">{error}</p>
-        <Button onClick={() => window.location.reload()}>Try Again</Button>
-      </div>
-    )
-  }
+      return <ErrorMessage message={error} />
+    }
 
   const getStatusBadge = (status?: 'completed' | 'in-progress' | 'not-started') => {
     switch (status) {
