@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { getUser } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { ErrorMessage } from "../../components/dassboard/ErrorMessage"
 import type { Module } from "./types"
@@ -6,26 +6,21 @@ import { mockModules } from "@/lib/mock-data"
 import DashboardContent from "./dashboard-content"
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  const { user } = await getUser()
+  console.log(user)
 
-  if (!session) {
-    redirect("/login")
+  if (!user) {
+    return redirect("/login")
   }
 
   let modules: Module[] = []
   let error: string | null = null
 
   try {
+    // In a real app, you would fetch this from your API
     const response = {
       success: true,
       modules: mockModules,
-    }
-
-    if (!response.success) {
-      throw new Error("Failed to fetch modules")
     }
 
     if (Array.isArray(response.modules)) {
@@ -55,7 +50,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardContent
-      user={session.user}
+      user={user}
       overallProgress={overallProgress}
       completedModules={completedModules}
       totalModules={totalModules}

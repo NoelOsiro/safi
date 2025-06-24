@@ -14,6 +14,7 @@ const publicPaths = [
   "/fonts",
   "/manifest.json",
   "/public",
+  "/api/auth/callback",
 ]
 
 // Protected paths that require authentication

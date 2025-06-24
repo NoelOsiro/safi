@@ -38,11 +38,17 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null })
 
         try {
-          const { error } = await supabase.auth.signInWithOAuth({
+          const redirectUrl = new URL(window.location.href);
+          const next = redirectUrl.searchParams.get('next') || '/dashboard';
+          
+          const { data, error } = await supabase.auth.signInWithOAuth({
             provider: "azure",
             options: {
-              scopes: "email profile openid",
-              redirectTo: `${window.location.origin}/auth/callback`,
+              scopes: "email profile",
+              
+              queryParams: {
+                prompt: "select_account",
+              },
             },
           })
 
@@ -242,7 +248,7 @@ export const useAuthStore = create<AuthState>()(
 // Initialize auth state when store is created (client-side only)
 if (typeof window !== "undefined") {
   // Listen to auth state changes
-  supabase.auth.onAuthStateChange((event, session) => {
+  supabase.auth.onAuthStateChange((event: string, session: any) => {
     const state = useAuthStore.getState()
 
     if (event === "SIGNED_IN" && session) {

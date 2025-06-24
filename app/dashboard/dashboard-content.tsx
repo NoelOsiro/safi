@@ -23,11 +23,15 @@ export default function DashboardContent({
   totalModules,
   modules,
 }: DashboardContentProps) {
+  if (!user) {
+    return null // or a loading spinner
+  }
+
   // Transform Supabase user to our User type
   const transformedUser = {
     id: user.id,
-    email: user.email!,
-    name: user.user_metadata?.name || user.user_metadata?.full_name || user.email!.split("@")[0],
+    email: user.email || '',
+    name: user.user_metadata?.name || user.user_metadata?.full_name || (user.email ? user.email.split("@")[0] : 'User'),
     fullName: user.user_metadata?.full_name || user.user_metadata?.name,
     avatar:
       user.user_metadata?.avatar_url ||

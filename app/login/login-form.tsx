@@ -1,42 +1,26 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
 import { useAuthStore } from "@/lib/stores/auth-store"
 
 export default function LoginForm() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const { isAuthenticated, isLoading, error, signInWithMicrosoft, clearError } = useAuthStore()
+  const { isLoading, error, signInWithMicrosoft, clearError } = useAuthStore()
   const [isSigningIn, setIsSigningIn] = useState(false)
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      const redirect = searchParams.get("redirect") || "/dashboard"
-      router.push(redirect)
-    }
-  }, [isAuthenticated, router, searchParams])
-
-  useEffect(() => {
-    const errorParam = searchParams.get("error")
-    if (errorParam) {
-      // Handle auth callback errors
-      console.error("Auth callback error:", errorParam)
-    }
-  }, [searchParams])
-
-  const handleMicrosoftLogin = async () => {
+  const handleMicrosoftLogin = useCallback(async () => {
     try {
       setIsSigningIn(true)
       clearError()
-      await signInWithMicrosoft()
+      await signInWithMicrosoft();
     } catch (error) {
       console.error("Microsoft login error:", error)
       setIsSigningIn(false)
     }
-  }
+  }, [signInWithMicrosoft])
 
   if (isLoading || isSigningIn) {
     return (
