@@ -23,8 +23,11 @@ jobs:
       - name: Install dependencies
         run: npm install
       
-      - name: Run tests with coverage
-        run: npm run test:ci
+      - name: Install jest-junit
+        run: npm install --save-dev jest-junit # Add this step to install jest-junit
+      
+      - name: Run tests with coverage and JUnit report
+        run: JEST_JUNIT_OUTPUT_DIR=./test-results/ JEST_JUNIT_FILENAME=junit.xml JEST_JUNIT_CLASSNAME="{filepath}" npm run test:ci # Modified command
         env:
           CI: true
           NODE_ENV: test
@@ -39,7 +42,16 @@ jobs:
           fail_ci_if_error: true
           verbose: true
       
-      - name: Upload test results
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }} # This condition ensures the step runs even if previous steps fail
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          # The default path for junit.xml is usually `./test-results/junit.xml`
+          # If your JEST_JUNIT_OUTPUT_DIR is different, adjust the path accordingly.
+          files: ./test-results/junit.xml # Specify the path to your JUnit XML file
+      
+      - name: Upload raw test results (optional, for debugging/archive)
         if: always()
         uses: actions/upload-artifact@v4
         with:
