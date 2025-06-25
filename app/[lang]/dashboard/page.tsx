@@ -5,11 +5,16 @@ import type { Module } from "./types"
 import { mockModules } from "@/lib/mock-data"
 import DashboardContent from "./dashboard-content"
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  params,
+}: {
+  params: { lang: string }
+}) {
   const { user } = await getUser()
+  const { lang } = params
 
   if (!user) {
-    redirect("/en/login?redirect=/en/dashboard")
+    redirect(`/${lang}/login?redirect=/${lang}/dashboard`)
   }
 
   let modules: Module[] = []

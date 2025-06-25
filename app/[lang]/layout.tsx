@@ -21,7 +21,7 @@ export const metadata: Metadata = {
         alt: "WinjoPro Preview",
       },
     ],
-    locale: "en_US",
+    locale: "en",
     type: "website",
   },
   twitter: {
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
 }
 export async function generateStaticParams() {
-  return [{ lang: 'en-US' }, { lang: 'sw' }]
+  return [{ lang: 'en' }, { lang: 'sw' }]
 }
  
 export default async function RootLayout({
@@ -40,7 +40,7 @@ export default async function RootLayout({
   params,
 }: Readonly<{
   children: React.ReactNode
-  params: Promise<{ lang: 'en-US' | 'sw' }>
+  params: Promise<{ lang: 'en' | 'sw' }>
 }>) {
   return (
     <html lang={(await params).lang} className="h-full">
