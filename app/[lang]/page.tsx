@@ -20,6 +20,7 @@ type Params = {
   }
 }
 
+
 export default async function HomePage({ params }: Params) {
   const { lang } = params
   const dict = await getDictionary(lang)
