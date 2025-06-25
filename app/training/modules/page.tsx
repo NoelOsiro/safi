@@ -31,7 +31,7 @@ import { useRouter } from "next/navigation"
 
 export default function Module1Page() {
   const router = useRouter()
-  const { user, isAuthenticated, needsOnboarding } = useAuthStore()
+  const { user, isAuthenticated } = useAuthStore()
   const { currentModule, currentSlide, setCurrentModule, setCurrentSlide, nextSlide, previousSlide } = useModuleStore()
   const { reviews, setReviews, addReview, isLoading: reviewsLoading } = useReviewStore()
 
@@ -49,13 +49,8 @@ export default function Module1Page() {
       return
     }
 
-    if (needsOnboarding) {
-      router.push("/onboarding")
-      return
-    }
-
     loadModuleData()
-  }, [isAuthenticated, needsOnboarding, router])
+  }, [isAuthenticated, router])
 
   const loadModuleData = async () => {
     try {
@@ -97,7 +92,7 @@ export default function Module1Page() {
         notHelpful: 0,
         rating: userRating,
         comment: userReview,
-        userName: user.fullName,
+        userName: user.fullName || "Anonymous", // Provide a default value
         userAvatar: user.avatar || `https://picsum.photos/40/40?random=${user.id}`
       };
 
@@ -111,8 +106,8 @@ export default function Module1Page() {
           rating: userRating,
           comment: userReview,
           user: {
-            fullName: user.fullName,
-            username: user.username,
+            fullName: user.fullName || "Anonymous", // Ensure fullName is not undefined
+            username: user.fullName || "Anonymous", // Ensure username is not undefined
             avatar: user.avatar || `https://picsum.photos/40/40?random=${user.id}`
           },
           createdAt: new Date().toISOString()
@@ -426,12 +421,12 @@ export default function Module1Page() {
                     <div className="flex items-start space-x-4">
                       <Avatar className="h-10 w-10">
                         <AvatarFallback className="bg-emerald-100 text-emerald-700">
-                          {review.user.username.charAt(0)}
+                          {review.user?.username.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">
-                          <h5 className="font-semibold text-slate-800">{review.user.username}</h5>
+                          <h5 className="font-semibold text-slate-800">{review.user?.username}</h5>
                           <span className="text-sm text-slate-500">{new Date(review.date).toLocaleDateString()}</span>
                         </div>
                         <div className="flex items-center mb-2">
