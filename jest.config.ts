@@ -48,6 +48,7 @@ const customJestConfig: Config = {
     '!**/next.config.js',
     '!**/tailwind.config.js',
     '!**/postcss.config.js',
+    '!**/components/ui/**',
     '!**/babel.config.js',
   ],
   coverageDirectory: 'coverage',

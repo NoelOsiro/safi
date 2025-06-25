@@ -44,7 +44,16 @@ export default function TrainingContent() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-emerald-600">{overallProgress}%</div>
+                <div 
+                  data-testid="overall-progress"
+                  className="text-2xl font-bold text-emerald-600" 
+                  role="progressbar" 
+                  aria-valuenow={overallProgress} 
+                  aria-valuemin={0} 
+                  aria-valuemax={100}
+                >
+                  {overallProgress}%
+                </div>
                 <div className="text-sm text-gray-600">Overall Progress</div>
                 <Progress value={overallProgress} className="mt-2" />
               </div>
@@ -56,7 +65,7 @@ export default function TrainingContent() {
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600">
-                  {modules.reduce((acc, m) => acc + (m.duration || 0), 0)} min
+                  {modules.reduce((acc, m) => acc + Number(m.duration || 0), 0)} min
                 </div>
                 <div className="text-sm text-gray-600">Total Study Time</div>
               </div>
@@ -74,6 +83,7 @@ export default function TrainingContent() {
                     <div className="flex items-center gap-2 mb-2">
                       <CardTitle className="text-xl">{module.title}</CardTitle>
                       <Badge
+                        role="status"
                         variant={
                           module.status === "completed"
                             ? "default"
@@ -111,11 +121,11 @@ export default function TrainingContent() {
                     </div>
                     <div className="flex items-center gap-1">
                       <BookOpen className="h-4 w-4" />
-                      {module.lessons?.length || 0} lessons
+                      {module.slides?.length || 0} lessons
                     </div>
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4" />
-                      {module.difficulty}
+                      {module.level}
                     </div>
                   </div>
 
