@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { redirect } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import ProfilePage from '@/app/profile/page';
+import ProfilePage from '@/app/[lang]/profile/page';
 
 // Mock redirect globally
 jest.mock('next/navigation', () => {
@@ -38,7 +38,7 @@ jest.mock('@/lib/supabase/client', () => {
 });
 
 // Mock ProfileContent component
-jest.mock('@/app/profile/profile-content', () => ({
+jest.mock('@/app/[lang]/profile/profile-content', () => ({
   __esModule: true,
   ProfileContent: function MockProfileContent({ user }: { user: any }) {
     return (

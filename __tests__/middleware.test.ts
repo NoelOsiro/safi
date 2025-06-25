@@ -1,17 +1,7 @@
 import { middleware } from "@/middleware";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
-// Mock the supabase client
-const mockGetSession = jest.fn();
-jest.mock("@/lib/supabase/server", () => ({
-  createClient: jest.fn(() => ({
-    auth: {
-      getSession: mockGetSession,
-    },
-  })),
-}));
-
-// Mock NextResponse
+// Mocks
 const mockNext = jest.fn();
 const mockRedirect = jest.fn();
 
@@ -19,23 +9,32 @@ jest.mock("next/server", () => ({
   NextResponse: {
     next: () => {
       mockNext();
-      return { status: 200 };
+      return { type: "next" };
     },
     redirect: (url: URL) => {
       mockRedirect(url);
-      return { status: 307, url };
+      return { type: "redirect", url };
     },
   },
 }));
 
-// Helper to create a mock request
-const createMockRequest = (path: string, method = "GET"): NextRequest => {
+// Create a mock request
+const createMockRequest = (
+  path: string,
+  headers: Record<string, string> = { "accept-language": "en" }
+): NextRequest => {
   const url = new URL(`http://localhost:3000${path}`);
+  const requestHeaders = new Headers(headers);
+
   return {
     url: url.toString(),
-    nextUrl: url,
-    method,
-    headers: new Headers(),
+    headers: requestHeaders,
+    nextUrl: {
+      pathname: url.pathname,
+      searchParams: url.searchParams,
+      toString: () => url.toString(),
+      clone: () => ({ pathname: url.pathname, searchParams: url.searchParams }),
+    },
   } as unknown as NextRequest;
 };
 
@@ -44,63 +43,57 @@ describe("Middleware", () => {
     jest.clearAllMocks();
   });
 
+  describe("Locale prefixing", () => {
+    it("redirects to locale-prefixed path if no locale present", () => {
+      const req = createMockRequest("/dashboard");
+      middleware(req);
+      // Get the URL object passed to mockRedirect
+      const redirectUrl = mockRedirect.mock.calls[0][0];
+      expect(redirectUrl.pathname).toBe("/en/dashboard");
+    });
+    
+
+    it("does not redirect if path already has valid locale", async () => {
+      const req = createMockRequest("/sw/profile");
+      const res = await middleware(req);
+      expect(mockNext).toHaveBeenCalled();
+      expect(res.type).toBe("next");
+    });
+  });
+
   describe("Public paths", () => {
     const publicPaths = [
       "/",
       "/login",
       "/signup",
       "/auth",
-      "/_next/static/file.js",
       "/favicon.ico",
+      "/manifest.json",
       "/images/logo.png",
       "/fonts/inter.woff2",
-      "/manifest.json",
       "/public/asset.png",
-      "/api/auth/callback",
     ];
 
-    it.each(publicPaths)("allows access to public path: %s", async (path) => {
-      const req = createMockRequest(path);
-      await middleware(req);
-      expect(mockNext).toHaveBeenCalled();
-    });
+    it.each(publicPaths)(
+      "redirects to locale-prefixed path: %s",
+      async (path) => {
+        const req = createMockRequest(path);
+        middleware(req);
+        // Get the URL object passed to mockRedirect
+        const redirectUrl = mockRedirect.mock.calls[0][0];
+        expect(redirectUrl.pathname).toBe(`/en${path}`);
+      }
+    );
+
+    it.each(publicPaths.map((p) => `/en${p}`))(
+      "passes through already-prefixed public path: %s",
+      async (path) => {
+        const req = createMockRequest(path);
+        const res = await middleware(req);
+        expect(mockNext).toHaveBeenCalled();
+        expect(res.type).toBe("next");
+        expect(mockRedirect).not.toHaveBeenCalled();
+      }
+    );    
   });
-
-  describe.skip("Protected paths", () => {
-    const protectedPaths = [
-      "/dashboard",
-      "/profile",
-      "/training",
-      "/assessment",
-      "/chat",
-      "/admin",
-      "/onboarding",
-    ];
-
-    it("redirects to login with redirect URL when no session exists", async () => {
-      mockGetSession.mockResolvedValueOnce({ data: { session: null } });
-      const req = createMockRequest("/dashboard");
-      
-      await middleware(req);
-
-      expect(mockGetSession).toHaveBeenCalled();
-      expect(mockRedirect).toHaveBeenCalledWith(
-        new URL("/login?redirect=/dashboard", "http://localhost:3000")
-      );
-    });
-
-    it("allows access when valid session exists", async () => {
-      mockGetSession.mockResolvedValueOnce({
-        data: { session: { user: { id: "user-123" } } },
-      });
-      const req = createMockRequest("/dashboard");
-
-      await middleware(req);
-
-      expect(mockGetSession).toHaveBeenCalled();
-      expect(mockNext).toHaveBeenCalled();
-    });
-  });
-
-  // Add more test cases as needed
 });

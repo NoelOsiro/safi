@@ -1,7 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import SiteHeader from "@/components/site-header"
-import "./globals.css"
+import "../globals.css"
 
 export const metadata: Metadata = {
   title: "WinjoPro",
@@ -31,14 +31,19 @@ export const metadata: Metadata = {
     images: ["https://safi-iota.vercel.app/images/og-image.png"], // 🔁 Replace with your image
   },
 }
-
+export async function generateStaticParams() {
+  return [{ lang: 'en-US' }, { lang: 'sw' }]
+}
+ 
 export default async function RootLayout({
   children,
+  params,
 }: Readonly<{
   children: React.ReactNode
+  params: Promise<{ lang: 'en-US' | 'sw' }>
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang={(await params).lang} className="h-full">
       <body className="min-h-screen flex flex-col bg-gray-50">
         <SiteHeader />
         <main className="flex-1">{children}</main>

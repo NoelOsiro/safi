@@ -1,16 +1,15 @@
 import { getUser } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { ErrorMessage } from "../../components/dassboard/ErrorMessage"
+import { ErrorMessage } from "../../../components/dassboard/ErrorMessage"
 import type { Module } from "./types"
 import { mockModules } from "@/lib/mock-data"
 import DashboardContent from "./dashboard-content"
 
 export default async function DashboardPage() {
   const { user } = await getUser()
-  console.log(user)
 
   if (!user) {
-    return redirect("/login")
+    redirect("/en/login?redirect=/en/dashboard")
   }
 
   let modules: Module[] = []
