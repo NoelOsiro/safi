@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     siteName: "WinjoPro",
     images: [
       {
-        url: "https://safi-iota.vercel.app/og-image.png", // 🔁 Replace with a real image
+        url: "https://safi-iota.vercel.app/images/og-image.png", // 🔁 Replace with a real image
         width: 1200,
         height: 630,
         alt: "WinjoPro Preview",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "WinjoPro",
     description: "Empowering communities through food safety and hygiene training.",
-    images: ["https://safi-iota.vercel.app/og-image.png"], // 🔁 Replace with your image
+    images: ["https://safi-iota.vercel.app/images/og-image.png"], // 🔁 Replace with your image
   },
 }
 

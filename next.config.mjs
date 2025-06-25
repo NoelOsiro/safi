@@ -25,11 +25,15 @@ const nextConfig = {
     ],
     unoptimized: true,
   },
-  webpack(config, { isServer }) {
-    // Apply Codecov plugin in both development and production
-    if (!isServer) {
-      config.plugins.push(codecovNextJSWebpackPlugin());
-    }
+  webpack: (config, options) => {
+    config.plugins.push(
+      codecovNextJSWebpackPlugin({
+        enableBundleAnalysis: true,
+        bundleName: "example-nextjs-webpack-bundle",
+        uploadToken: process.env.CODECOV_TOKEN,
+        webpack: options.webpack,
+      }),
+    );
 
     return config;
   },
