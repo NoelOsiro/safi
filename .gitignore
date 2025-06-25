@@ -25,3 +25,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# coverage
+coverage/
+coverage/*
+coverage/lcov.info
+coverage/lcov-report
+coverage/lcov-report/
+coverage/lcov-report/*
+
+# codecov
+codecov
