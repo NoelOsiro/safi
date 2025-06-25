@@ -80,7 +80,7 @@ export function WelcomeHeader({ user }: WelcomeHeaderProps) {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <form action="/auth/signout" method="post">
+              <form action={logout} method="post">
                 <button type="submit" className="flex items-center w-full" data-testid="logout-button">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>

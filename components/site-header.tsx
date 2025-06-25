@@ -13,7 +13,12 @@ import {
 import { LogOut, User, Settings } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
-
+async function logout() {
+  "use server"; // <-- required for server action
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
+}
 export default async function SiteHeader() {
   const supabase = await createClient()
   const {
@@ -74,7 +79,7 @@ export default async function SiteHeader() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <form action="/auth/signout" method="post">
+                    <form action={logout} method="post">
                       <button type="submit" className="flex items-center w-full">
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Log out</span>
