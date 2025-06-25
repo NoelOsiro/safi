@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, User, Briefcase, MapPin, AlertCircle } from "lucide-react"
-import authService from "@/lib/services/auth.service"
 import { useAuthStore } from "@/lib/stores/auth-store"
 
 type FormData = {
@@ -57,7 +56,7 @@ export default function SignUpPage() {
   const handleAzureSignIn = async () => {
     setError("")
     try {
-      await authService.signInWithMicrosoft()
+      // await signInWithMicrosoft()
     } catch (error) {
       setError("Failed to sign in with Azure AD")
     }
@@ -83,7 +82,7 @@ export default function SignUpPage() {
           ...formData,
           name: user?.name,
           email: user?.email,
-          image: user?.image,
+          avatar: user?.avatar,
         }),
       })
 
@@ -160,7 +159,7 @@ export default function SignUpPage() {
           <div className="flex items-center space-x-4">
             <img
               className="h-12 w-12 rounded-full"
-              src={user?.image || `https://ui-avatars.com/api/?name=${user?.name || "User"}&background=10B981&color=fff`}
+              src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || "User"}&background=10B981&color=fff`}
               alt="User avatar"
             />
             <div>
