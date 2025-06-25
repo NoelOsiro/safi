@@ -7,7 +7,7 @@ describe("Testimonials", () => {
     
     expect(screen.getByText("Success Stories")).toBeInTheDocument()
     expect(
-      screen.getByText("Hear from vendors who transformed their businesses with Mama Safi")
+      screen.getByText("Hear from vendors who transformed their businesses with WinjoPro")
     ).toBeInTheDocument()
   })
 

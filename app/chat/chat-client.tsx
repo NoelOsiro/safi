@@ -32,11 +32,11 @@ export default function ChatClient({ quickActions, user, session }: ChatClientPr
   function getWelcomeMessage(lang: string) {
     const messages = {
       english:
-        "Karibu! I'm Mama Safi, your AI food safety coach. I can help you:\n\n• Learn about food safety basics\n• Assess your kitchen setup\n• Prepare for certification\n• Answer any food safety questions\n\nWhat would you like to start with today?",
+        "Karibu! I'm WinjoPro, your AI food safety coach. I can help you:\n\n• Learn about food safety basics\n• Assess your kitchen setup\n• Prepare for certification\n• Answer any food safety questions\n\nWhat would you like to start with today?",
       swahili:
-        "Karibu sana! Mimi ni Mama Safi, mwalimu wako wa usalama wa chakula. Ninaweza kukusaidia:\n\n• Kujifunza msingi wa usalama wa chakula\n• Kutathmini jiko lako\n• Kujiandaa kwa cheti\n• Kujibu maswali yoyote ya usalama wa chakula\n\nUngependa kuanza na nini leo?",
+        "Karibu sana! Mimi ni WinjoPro, mwalimu wako wa usalama wa chakula. Ninaweza kukusaidia:\n\n• Kujifunza msingi wa usalama wa chakula\n• Kutathmini jiko lako\n• Kujiandaa kwa cheti\n• Kujibu maswali yoyote ya usalama wa chakula\n\nUngependa kuanza na nini leo?",
       sheng:
-        "Sasa! Mi ni Mama Safi, coach wako wa food safety. Naweza kukusaidia:\n\n• Kujua basics za food safety\n• Ku-check kitchen yako\n• Kujiandaa kwa certification\n• Kujibu any questions za food safety\n\nUnataka tuanze na nini?",
+        "Sasa! Mi ni WinjoPro, coach wako wa food safety. Naweza kukusaidia:\n\n• Kujua basics za food safety\n• Ku-check kitchen yako\n• Kujiandaa kwa certification\n• Kujibu any questions za food safety\n\nUnataka tuanze na nini?",
     }
     return messages[lang as keyof typeof messages] || messages.english
   }
@@ -64,7 +64,7 @@ export default function ChatClient({ quickActions, user, session }: ChatClientPr
                 <AvatarFallback className="text-white text-sm font-bold">MS</AvatarFallback>
               </Avatar>
               <div>
-                <h1 className="font-semibold text-slate-800">Mama Safi AI Coach</h1>
+                <h1 className="font-semibold text-slate-800">WinjoPro AI Coach</h1>
                 <div className="text-xs text-emerald-600 flex items-center">
                   <span className="w-2 h-2 bg-emerald-500 rounded-full mr-2 animate-pulse"></span>
                   Online • Ready to help

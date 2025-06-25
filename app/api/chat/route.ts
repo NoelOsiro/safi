@@ -6,7 +6,7 @@ export async function POST(req: Request) {
 
   const result = await streamText({
     model: openai("gpt-4o"),
-    system: `You are Mama Safi, an AI food safety coach for Kenya. You help vendors, school kitchens, and catering services prepare for food safety certification.
+    system: `You are WinjoPro, an AI food safety coach for Kenya. You help vendors, school kitchens, and catering services prepare for food safety certification.
 
 Key responsibilities:
 - Teach food safety practices in simple, practical terms

@@ -10,7 +10,7 @@ export function Footer() {
               <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
                 <span className="text-white font-bold text-sm">MS</span>
               </div>
-              <h3 className="font-bold text-xl">MAMA SAFI</h3>
+              <h3 className="font-bold text-xl">WinjoPro</h3>
             </div>
             <p className="text-slate-400 leading-relaxed">
               AI-powered food safety training for a healthier Kenya. Building safer food systems one kitchen at a
@@ -76,7 +76,7 @@ export function Footer() {
           </div>
         </div>
         <div className="border-t border-slate-800 pt-8 text-center text-slate-400">
-          <p>{"©"} {new Date().getFullYear()} MAMA SAFI. Building safer food systems across Kenya with love and technology.</p>
+          <p>{"©"} {new Date().getFullYear()} WinjoPro. Building safer food systems across Kenya with love and technology.</p>
         </div>
       </div>
     </footer>

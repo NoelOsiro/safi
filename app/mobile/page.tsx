@@ -21,7 +21,7 @@ export default function MobilePage() {
             <span className="text-white font-bold text-sm">MS</span>
           </div>
           <div>
-            <h1 className="font-bold text-lg">MAMA SAFI</h1>
+            <h1 className="font-bold text-lg">WinjoPro</h1>
             <Badge className="bg-green-100 text-green-800 text-xs">AI</Badge>
           </div>
         </div>
@@ -254,7 +254,7 @@ export default function MobilePage() {
               <strong>Mobile Preview</strong>
             </p>
             <p className="text-xs text-blue-700">
-              This shows how MAMA SAFI looks on mobile devices.
+              This shows how WinjoPro looks on mobile devices.
               <Link href="/" className="underline ml-1">
                 View full site
               </Link>

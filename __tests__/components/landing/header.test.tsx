@@ -6,7 +6,7 @@ describe("Header", () => {
     render(<Header />)
 
     // Check logo and site title
-    expect(screen.getByText("MAMA SAFI")).toBeInTheDocument()
+    expect(screen.getByText("WinjoPro")).toBeInTheDocument()
     expect(screen.getByText("AI Coach for Food Safety")).toBeInTheDocument()
 
     // Check navigation links

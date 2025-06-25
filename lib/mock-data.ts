@@ -235,7 +235,7 @@ export const mockReviews = [
     userName: "Grace Achieng",
     userAvatar: "https://picsum.photos/40/40?random=22",
     rating: 5,
-    comment: "Perfect for beginners like me. Thank you Mama Safi!",
+    comment: "Perfect for beginners like me. Thank you WinjoPro!",
     date: "2024-01-10T16:45:00Z",
     helpful: 15,
     notHelpful: 0,

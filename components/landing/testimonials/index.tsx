@@ -15,7 +15,7 @@ export function Testimonials() {
     {
       name: "Mary Wanjiku",
       role: "Street Food Vendor, Nairobi",
-      quote: "Mama Safi helped me understand food safety in Kiswahili. Now my customers trust my food more!",
+      quote: "WinjoPro helped me understand food safety in Kiswahili. Now my customers trust my food more!",
       rating: 5,
       imageId: 7,
     },
@@ -40,7 +40,7 @@ export function Testimonials() {
       <div className="container mx-auto">
         <div className="text-center mb-16 animate-fade-in-up">
           <h2 className="text-4xl font-bold text-slate-800 mb-4">Success Stories</h2>
-          <p className="text-xl text-slate-600">Hear from vendors who transformed their businesses with Mama Safi</p>
+          <p className="text-xl text-slate-600">Hear from vendors who transformed their businesses with WinjoPro</p>
         </div>
         <div className="grid md:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (

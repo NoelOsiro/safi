@@ -11,7 +11,7 @@ export default function Hero() {
               🇰🇪 Made for Kenya with ❤️
             </Badge>
             <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-emerald-700 via-teal-700 to-cyan-700 bg-clip-text text-transparent mb-6 animate-fade-in-up delay-100">
-              MAMA SAFI
+              WinjoPro
             </h1>
             <p className="text-2xl md:text-3xl text-slate-700 mb-4 animate-fade-in-up delay-200">
               AI Coach for Food Safety in Kenya

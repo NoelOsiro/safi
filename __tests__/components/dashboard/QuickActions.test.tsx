@@ -12,7 +12,7 @@ describe("QuickActions", () => {
     
     // Check help card
     expect(screen.getByText("Need Help?")).toBeInTheDocument()
-    expect(screen.getByText("Chat with Mama Safi AI Coach for personalized guidance")).toBeInTheDocument()
+    expect(screen.getByText("Chat with WinjoPro AI Coach for personalized guidance")).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /chat with ai coach/i })).toHaveAttribute("href", "/chat")
   })
 

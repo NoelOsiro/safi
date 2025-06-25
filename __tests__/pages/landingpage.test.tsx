@@ -11,7 +11,7 @@ describe('HomePage', () => {
     
     // Check for the logo and title within the header
     const logo = header.querySelector('div[class*="bg-gradient-to-br"]')
-    const title = screen.getAllByText('MAMA SAFI')
+    const title = screen.getAllByText('WinjoPro')
     const subtitle = screen.getByText('AI Coach for Food Safety')
     
     expect(header).toBeInTheDocument()

@@ -24,7 +24,7 @@ export default function OnboardingPage() {
 
   const steps = [
     {
-      title: "Welcome to Mama Safi!",
+      title: "Welcome to WinjoPro!",
       subtitle: "Your AI-powered food safety coach",
       content: "We're excited to help you master food safety and get certified. Let's start your journey!",
       image: "https://picsum.photos/400/300?random=1",
@@ -98,7 +98,7 @@ export default function OnboardingPage() {
             <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
               <span className="text-white font-bold text-sm">MS</span>
             </div>
-            <span className="font-bold text-emerald-800">MAMA SAFI</span>
+            <span className="font-bold text-emerald-800">WinjoPro</span>
           </div>
           <Button variant="ghost" onClick={handleSkip} className="text-slate-600">
             Skip Tour

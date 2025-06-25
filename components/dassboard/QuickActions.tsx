@@ -24,7 +24,7 @@ export function QuickActions() {
       <Card className="border-blue-200">
         <CardHeader>
           <CardTitle className="text-blue-800">Need Help?</CardTitle>
-          <CardDescription>Chat with Mama Safi AI Coach for personalized guidance</CardDescription>
+          <CardDescription>Chat with WinjoPro AI Coach for personalized guidance</CardDescription>
         </CardHeader>
         <CardContent>
           <Button asChild variant="outline" className="w-full border-blue-200 text-blue-700 hover:bg-blue-50">

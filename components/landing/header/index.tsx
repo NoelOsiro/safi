@@ -10,7 +10,7 @@ export function Header() {
           </div>
           <div>
             <h1 className="font-bold text-xl bg-gradient-to-r from-emerald-700 to-teal-700 bg-clip-text text-transparent">
-              MAMA SAFI
+              WinjoPro
             </h1>
             <p className="text-xs text-emerald-600">AI Coach for Food Safety</p>
           </div>

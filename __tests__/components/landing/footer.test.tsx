@@ -5,7 +5,7 @@ describe("Footer", () => {
   it("renders the footer with correct company info", () => {
     render(<Footer />)
     
-    expect(screen.getByText("MAMA SAFI")).toBeInTheDocument()
+    expect(screen.getByText("WinjoPro")).toBeInTheDocument()
     expect(
       screen.getByText("AI-powered food safety training for a healthier Kenya. Building safer food systems one kitchen at a time.")
     ).toBeInTheDocument()
@@ -30,7 +30,7 @@ describe("Footer", () => {
     
     const currentYear = new Date().getFullYear()
     expect(
-      screen.getByText(`© ${currentYear} MAMA SAFI. Building safer food systems across Kenya with love and technology.`)
+      screen.getByText(`© ${currentYear} WinjoPro. Building safer food systems across Kenya with love and technology.`)
     ).toBeInTheDocument()
   })
 
