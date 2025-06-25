@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -19,7 +19,7 @@ type FormData = {
   agreeToTerms: boolean
 }
 
-export default function SignUpPage() {
+function SignUpContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, isAuthenticated, isLoading } = useAuthStore()
@@ -27,6 +27,7 @@ export default function SignUpPage() {
   const [error, setError] = useState("")
   const [currentStep, setCurrentStep] = useState(1)
   const totalSteps = 2
+  const [status, setStatus] = useState<"loading" | "authenticated" | "unauthenticated">("loading")
 
   const [formData, setFormData] = useState<FormData>({
     phone: "",
@@ -352,10 +353,22 @@ export default function SignUpPage() {
           {currentStep === 1 && renderProfileStep()}
           {currentStep === 2 && renderProfileStep()}
         </div>
-
-        {/* Navigation Buttons */}
-
       </div>
     </div>
+  )
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    }>
+      <SignUpContent />
+    </Suspense>
   )
 }
