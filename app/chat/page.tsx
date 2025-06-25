@@ -8,12 +8,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ArrowLeft, Globe } from "lucide-react"
 import Link from "next/link"
 import { useChat } from "ai/react"
-import { createClient } from "@/lib/supabase/server"
+import { supabase } from "@/lib/supabase/client"
 import { redirect } from "next/navigation"
 import ChatContent from "./chat-content"
 
 export default async function ChatPage() {
-  const supabase = await createClient()
   const {
     data: { session },
   } = await supabase.auth.getSession()
