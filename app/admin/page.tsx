@@ -308,6 +308,33 @@ export default function AdminPage() {
               </Card>
             </div>
           </TabsContent>
+
+          <TabsContent value="reports" className="space-y-6">
+            <Card data-testid="reports-card">
+              <CardHeader>
+                <CardTitle data-testid="monthly-report-title">Monthly Report</CardTitle>
+                <CardDescription>Analytics and insights for the current month</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+<CardTitle data-testid="user-satisfaction-title">User Satisfaction</CardTitle>
+                      <div className="text-3xl font-bold" data-testid="satisfaction-percentage">23%</div>
+                      <p className="text-sm text-muted-foreground">+12% from last month</p>
+                    </CardHeader>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle data-testid="community-reach-title">Community Reach</CardTitle>
+                      <div className="text-3xl font-bold" data-testid="reach-count">1,245</div>
+                      <p className="text-sm text-muted-foreground">+8% from last month</p>
+                    </CardHeader>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
     </div>
