@@ -110,6 +110,12 @@
                 "advanced": "Advanced"
             }
         },
+        "cta": {
+            "title": "Get Started",
+            "subtitle": "Empowering communities through food safety and hygiene training.",
+            "startButton": "Start Training",
+            "assessmentButton": "Take Assessment"
+        },
         "footer": {
             "company": {
                 "name": "WinjoPro",
