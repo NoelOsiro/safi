@@ -47,16 +47,3 @@ jobs:
         uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          # The default path for junit.xml is usually `./test-results/junit.xml`
-          # If your JEST_JUNIT_OUTPUT_DIR is different, adjust the path accordingly.
-          files: ./test-results/junit.xml # Specify the path to your JUnit XML file
-      
-      - name: Upload raw test results (optional, for debugging/archive)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: |
-            coverage/
-            test-results/
-          retention-days: 7
