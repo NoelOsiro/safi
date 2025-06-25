@@ -1,3 +1,5 @@
+import { codecovNextJSWebpackPlugin } from "@codecov/nextjs-webpack-plugin";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -23,6 +25,14 @@ const nextConfig = {
     ],
     unoptimized: true,
   },
-}
+  webpack(config, { isServer }) {
+    // Apply Codecov plugin in both development and production
+    if (!isServer) {
+      config.plugins.push(codecovNextJSWebpackPlugin());
+    }
 
-export default nextConfig
+    return config;
+  },
+};
+
+export default nextConfig;
