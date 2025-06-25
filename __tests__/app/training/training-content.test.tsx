@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { mockModules } from '@/lib/mock-data';
-import TrainingContent from '@/app/training/training-content';
+import TrainingContent from '@/app/[lang]/training/training-content';
 import '@testing-library/jest-dom';
 
 // Mock the next/link component

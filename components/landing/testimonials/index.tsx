@@ -1,6 +1,11 @@
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from "next/image"
 import { Star } from "lucide-react"
+import { Dictionary } from "@/app/dictionaries"
+
+interface TestimonialsProps {
+  dict: Dictionary
+}
 
 type Testimonial = {
   name: string
@@ -10,37 +15,15 @@ type Testimonial = {
   imageId: number
 }
 
-export function Testimonials() {
-  const testimonials: Testimonial[] = [
-    {
-      name: "Mary Wanjiku",
-      role: "Street Food Vendor, Nairobi",
-      quote: "WinjoPro helped me understand food safety in Kiswahili. Now my customers trust my food more!",
-      rating: 5,
-      imageId: 7,
-    },
-    {
-      name: "John Kiprotich",
-      role: "School Kitchen Manager, Eldoret",
-      quote: "The AI coach made learning easy. We passed our health inspection on the first try!",
-      rating: 5,
-      imageId: 8,
-    },
-    {
-      name: "Grace Achieng",
-      role: "Catering Business Owner, Kisumu",
-      quote: "The photo assessment feature helped me identify problems I never noticed before.",
-      rating: 5,
-      imageId: 9,
-    },
-  ]
+export function Testimonials({ dict }: TestimonialsProps) {
+  const { title, subtitle, testimonials } = dict.landing.testimonials
 
   return (
     <section className="py-20 px-4 bg-white">
       <div className="container mx-auto">
         <div className="text-center mb-16 animate-fade-in-up">
-          <h2 className="text-4xl font-bold text-slate-800 mb-4">Success Stories</h2>
-          <p className="text-xl text-slate-600">Hear from vendors who transformed their businesses with WinjoPro</p>
+          <h2 className="text-4xl font-bold text-slate-800 mb-4">{title}</h2>
+          <p className="text-xl text-slate-600">{subtitle}</p>
         </div>
         <div className="grid md:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (

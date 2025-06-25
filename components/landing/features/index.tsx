@@ -1,47 +1,89 @@
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { MessageCircle, BookOpen, CheckCircle, Users, Globe, Award } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Award, CheckCircle, BookOpen, Users, Globe } from "lucide-react"
 
-export function FeaturesGrid() {
+interface FeaturesGridProps {
+  dict: {
+    landing: {
+      features: {
+        title: string
+        subtitle: string
+        aiTitle: string
+        aiDescription: string
+        certificationPrep: string
+        certificationPrepDescription: string
+        interactiveModules: string
+        interactiveModulesDescription: string
+        smartAssessment: string
+        smartAssessmentDescription: string
+        communitySupport: string
+        communitySupportDescription: string
+        multiPlatformAccess: string
+        multiPlatformAccessDescription: string
+      }
+    }
+  }
+}
+
+export function FeaturesGrid({ dict }: FeaturesGridProps) {
+  
+  const gradientClasses = [
+    "from-emerald-500 to-teal-500",
+    "from-blue-500 to-cyan-500",
+    "from-purple-500 to-indigo-500",
+    "from-amber-500 to-orange-500",
+    "from-rose-500 to-pink-500",
+    "from-violet-500 to-fuchsia-500"
+  ]
+  
+  const icons = [
+    <CheckCircle key="check" className="h-6 w-6 text-white" />,
+    <CheckCircle key="check2" className="h-6 w-6 text-white" />,
+    <CheckCircle key="check3" className="h-6 w-6 text-white" />,
+    <CheckCircle key="check4" className="h-6 w-6 text-white" />,
+    <CheckCircle key="check5" className="h-6 w-6 text-white" />,
+    <CheckCircle key="check6" className="h-6 w-6 text-white" />
+  ]
+
   const features = [
     {
-      title: "AI Coach",
-      icon: <MessageCircle className="h-8 w-8 text-white" />,
-      description: "Chat-based assistant in Swahili, English & Sheng guiding you through training with personalized support",
-      gradient: "from-emerald-500 to-teal-500",
-      textColor: "text-emerald-800"
-    },
-    {
-      title: "Interactive Modules",
-      icon: <BookOpen className="h-8 w-8 text-white" />,
-      description: "Short audio-visual courses covering hygiene, storage, and certification prep with hands-on activities",
+      title: dict.landing.features.aiTitle,
+      icon: <CheckCircle className="h-8 w-8 text-white" />,
+      description: dict.landing.features.aiDescription,
       gradient: "from-blue-500 to-cyan-500",
       textColor: "text-blue-800"
     },
     {
-      title: "Smart Assessment",
+      title: dict.landing.features.interactiveModules,
+      icon: <BookOpen className="h-8 w-8 text-white" />,
+      description: dict.landing.features.interactiveModulesDescription,
+      gradient: "from-blue-500 to-cyan-500",
+      textColor: "text-blue-800"
+    },
+    {
+      title: dict.landing.features.smartAssessment,
       icon: <CheckCircle className="h-8 w-8 text-white" />,
-      description: "AI-powered photo analysis and quizzes to evaluate your kitchen and prepare for certification",
+      description: dict.landing.features.smartAssessmentDescription,
       gradient: "from-purple-500 to-pink-500",
       textColor: "text-purple-800"
     },
     {
-      title: "Certification Prep",
+      title: dict.landing.features.certificationPrep,
       icon: <Award className="h-8 w-8 text-white" />,
-      description: "Mock tests and real inspection scenarios with performance tips to ensure you pass on the first try",
+      description: dict.landing.features.certificationPrepDescription,
       gradient: "from-orange-500 to-amber-500",
       textColor: "text-orange-800"
     },
     {
-      title: "Community Support",
+      title: dict.landing.features.communitySupport,
       icon: <Users className="h-8 w-8 text-white" />,
-      description: "Connect with trainers, NGOs, and health officers for ongoing support and group learning",
+      description: dict.landing.features.communitySupportDescription,
       gradient: "from-rose-500 to-red-500",
       textColor: "text-rose-800"
     },
     {
-      title: "Multi-Platform Access",
+      title: dict.landing.features.multiPlatformAccess,
       icon: <Globe className="h-8 w-8 text-white" />,
-      description: "Available on WhatsApp, web, and mobile app for maximum accessibility across all devices",
+      description: dict.landing.features.multiPlatformAccessDescription,
       gradient: "from-teal-500 to-emerald-500",
       textColor: "text-teal-800"
     }
@@ -51,9 +93,9 @@ export function FeaturesGrid() {
     <section className="py-20 px-4 bg-gradient-to-br from-slate-50 to-emerald-50">
       <div className="container mx-auto">
         <div className="text-center mb-16 animate-fade-in-up">
-          <h2 className="text-4xl font-bold text-slate-800 mb-4">Powerful Features for Food Safety</h2>
+          <h2 className="text-4xl font-bold text-slate-800 mb-4">{dict.landing.features.title}</h2>
           <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-            Everything you need to master food safety and get certified, powered by AI
+            {dict.landing.features.subtitle}
           </p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">

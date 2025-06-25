@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { ModuleCard } from "@/components/dassboard/ModuleCard";
-import type { Module } from "@/app/dashboard/types";
+import type { Module } from "@/app/[lang]/dashboard/types";
 
 const mockModule: Module = {
   id: "1",

@@ -1,0 +1,174 @@
+{
+  "landing": {
+    "hero": {
+      "title": "WinjoPro",
+      "tagline": "Mwalimu wa AI kwa Usalama wa Chakula nchini Kenya",
+      "subtitle": "Kuwawezesha jamii kupitia mafunzo ya usalama wa chakula na usafi.",
+      "button": "Anza",
+      "description": "Mafunzo ya kisasa kwa chakula salama, kutoka jikoni kwako hadi kwa jamii. Jitayarishe kwa udhibitisho wa usalama wa chakula kupitia mafunzo ya kufikika, yanayosaidiwa na AI na kuzungumza lugha yako.",
+      "madeInKenya": "Imetengenezwa kwa ajili ya Kenya kwa ❤️",
+      "startAITraining": "Anza Mafunzo ya AI",
+      "watchDemo": "Tazama Kiolezo"
+    },
+    "stats": {
+      "title": "Inaaminiwa na Maelfu",
+      "subtitle": "Tunaeneza usalama wa chakula kote Kenya kwa msaada wa AI",
+      "vendorTrained": "Wauzaji Waliofundishwa",
+      "countiesCovered": "Kaunti Zilizofikiwa",
+      "passRateIncrease": "Ongezeko la Kiwango cha Kupita",
+      "languagesSupported": "Lugha Zinazosaidiwa"
+    },
+    "visual": {
+      "learnThroughVisualStories": "Jifunze Kupitia Hadithi za Picha",
+      "realKitchenScenariosAndVisualExamples": "Kocha wetu wa AI hutumia hali halisi za jikoni na mifano ya picha kufanya dhana za usalama wa chakula ziwe rahisi kueleweka na kukumbukwa.",
+      "interactivePhotoBasedLearning": "Kujifunza kwa picha zenye mwingiliano",
+      "realKitchenScenariosFromKenya": "Hali halisi za jikoni kutoka Kenya",
+      "stepByStepVisualGuides": "Mwongozo wa hatua kwa hatua kwa njia ya picha",
+      "realKitchenTrainingScenarios": "Hali halisi za mafunzo ya jikoni"
+    },
+    "features": {
+      "title": "Mtaala Kamili wa Mafunzo",
+      "subtitle": "Tunaeneza usalama wa chakula kote Kenya kwa msaada wa AI",
+      "aiTitle": "Kocha wa AI",
+      "interactiveModules": "Moduli za Kuingiliana",
+      "smartAssessment": "Tathmini ya Akili",
+      "certificationPrep": "Maandalizi ya Cheti",
+      "communitySupport": "Msaada wa Jamii",
+      "multiPlatformAccess": "Upatikanaji kwenye Mifumo Mingi",
+      "aiDescription": "Msaidizi wa gumzo kwa Kiswahili, Kiingereza na Sheng' anayekuongoza kwenye mafunzo kwa msaada wa kibinafsi",
+      "interactiveModulesDescription": "Kozi fupi za sauti na picha zinazoangazia usafi, uhifadhi, na maandalizi ya cheti kwa shughuli za vitendo",
+      "smartAssessmentDescription": "Uchambuzi wa picha unaoendeshwa na AI na maswali ya tathmini ya jikoni yako ili kukuandaa kwa cheti",
+      "certificationPrepDescription": "Mitihani ya majaribio na hali halisi za ukaguzi zenye vidokezo vya utendaji ili kuhakikisha unapita kwa mara ya kwanza",
+      "communitySupportDescription": "Ungana na wakufunzi, mashirika ya kijamii, na maafisa wa afya kwa msaada endelevu na kujifunza kwa vikundi",
+      "multiPlatformAccessDescription": "Inapatikana kwa WhatsApp, wavuti, na programu ya simu kwa ufikiaji wa juu kwenye vifaa vyote"
+    },
+    "testimonials": {
+      "title": "Hadithi za Mafanikio",
+      "subtitle": "Sikiliza kutoka kwa wafanyabiashara walioboresha biashara zao kwa msaada wa WinjoPro",
+      "testimonials": [
+        {
+          "name": "Mary Wanjiku",
+          "role": "Muuzaji wa Chakula Mitaani, Nairobi",
+          "quote": "WinjoPro ilinisaidia kuelewa usalama wa chakula kwa Kiswahili. Sasa wateja wananiamini zaidi kuhusu chakula changu!",
+          "rating": 5,
+          "imageId": 7
+        },
+        {
+          "name": "John Kiprotich",
+          "role": "Meneja wa Jikoni ya Shule, Eldoret",
+          "quote": "Kocha wa AI alifanya kujifunza kuwe rahisi. Tulipita ukaguzi wa afya mara ya kwanza tu!",
+          "rating": 5,
+          "imageId": 8
+        },
+        {
+          "name": "Grace Achieng",
+          "role": "Mmiliki wa Biashara ya Upishi, Kisumu",
+          "quote": "Kipengele cha tathmini ya picha kilinisaidia kutambua matatizo ambayo sikuwahi kuyagundua hapo awali.",
+          "rating": 5,
+          "imageId": 9
+        }
+      ]
+    },
+    "curriculum": {
+      "title": "Mtaala Kamili wa Mafunzo",
+      "subtitle": "Moduli tano kamili zilizoundwa mahsusi kwa wafanyikazi wa chakula na mijikoni ya Kenya",
+      "modules": [
+        {
+          "title": "Utangulizi wa Usalama wa Chakula",
+          "description": "Kuelewa misingi ya usalama wa chakula na kwa nini inafaa kwa biashara yako",
+          "duration": "Dak 15",
+          "level": "Mwanzo"
+        },
+        {
+          "title": "Usafi na Uthabiti",
+          "description": "Mazoezi ya usafi wa mtu binafsi na taratibu sahihi za usafi",
+          "duration": "Dak 20",
+          "level": "Mwanzo"
+        },
+        {
+          "title": "Ushughulikiaji na Uhifadhi wa Chakula",
+          "description": "Joto salama la uhifadhi na mbinu sahihi za usimamizi",
+          "duration": "Dak 25",
+          "level": "Kati"
+        },
+        {
+          "title": "Usanidi wa Jikoni na Usalama",
+          "description": "Mpangilio bora wa jikoni na mifumo ya usimamizi wa taka",
+          "duration": "Dak 18",
+          "level": "Kati"
+        },
+        {
+          "title": "Mahitaji ya Udhibitisho",
+          "description": "Nyaraka zinazohitajika na mikakati ya maandalizi ya ukaguzi",
+          "duration": "Dak 22",
+          "level": "Juu"
+        }
+      ],
+      "levels": {
+        "beginner": "Mwanzo",
+        "intermediate": "Kati",
+        "advanced": "Juuzi"
+      }
+    },
+    "cta": {
+      "title": "Jifunza Kwa Msaada",
+      "subtitle": "Tunaeneza usalama wa chakula kote Kenya kwa msaada wa AI",
+      "startButton": "Anza",
+      "assessmentButton": "Tathmini ya Akili"
+    },
+    "footer": {
+      "company": {
+        "name": "WinjoPro",
+        "description": "Kocha wa AI kwa Usalama wa Chakula nchini Kenya"
+      },
+      "platform": {
+        "title": "Jukwaa",
+        "items": [
+          {
+            "label": "Nyumbani",
+            "href": "/"
+          },
+          {
+            "label": "Kuhusu",
+            "href": "/about"
+          },
+          {
+            "label": "Wasiliana Nasi",
+            "href": "/contact"
+          }
+        ]
+      },
+      "support": {
+        "title": "Msaada",
+        "items": [
+          {
+            "label": "Kituo cha Msaada",
+            "href": "/help-center"
+          },
+          {
+            "label": "Maswali Yanayoulizwa Sana",
+            "href": "/faq"
+          },
+          {
+            "label": "Wasiliana Nasi",
+            "href": "/contact"
+          }
+        ]
+      },
+      "legal": {
+        "title": "Kisheria",
+        "items": [
+          {
+            "label": "Masharti ya Matumizi",
+            "href": "/terms"
+          },
+          {
+            "label": "Sera ya Faragha",
+            "href": "/privacy"
+          }
+        ]
+      },
+      "copyright": "© 2023 WinjoPro. Haki zote zimehifadhiwa."
+    }
+  }
+}

@@ -1,8 +1,8 @@
 import { Badge } from "@/components/ui/badge";
-import { WelcomeHeader } from "../../components/dassboard/WelcomeHeader";
-import { ProgressCards } from "../../components/dassboard/ProgressCards";
-import { ModuleCard } from "../../components/dassboard/ModuleCard";
-import { QuickActions } from "../../components/dassboard/QuickActions";
+import { WelcomeHeader } from "../../../components/dassboard/WelcomeHeader";
+import { ProgressCards } from "../../../components/dassboard/ProgressCards";
+import { ModuleCard } from "../../../components/dassboard/ModuleCard";
+import { QuickActions } from "../../../components/dassboard/QuickActions";
 import type { Module } from "./types";
 import type { User } from "@supabase/supabase-js";
 

@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import AssessmentContent from '@/app/assessment/assessment-content';
+import AssessmentContent from '@/app/[lang]/assessment/assessment-content';
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -32,7 +32,7 @@ jest.mock('@/lib/supabase/server', () => ({
 }));
 
 // Mock the AssessmentContent component since we're testing the page
-jest.mock('@/app/assessment/assessment-content', () => ({
+jest.mock('@/app/[lang]/assessment/assessment-content', () => ({
   __esModule: true,
   default: function MockAssessmentContent() {
     return <div data-testid="mock-assessment-content">Mock Assessment Content</div>;
