@@ -40,14 +40,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage/lcov.info
           fail_ci_if_error: true
-          verbose: true
-      
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }} # This condition ensures the step runs even if previous steps fail
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-            
+          verbose: true 
       - name: Upload raw test results (optional, for debugging/archive)
         if: always()
         uses: actions/upload-artifact@v4
