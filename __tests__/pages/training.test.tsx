@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import TrainingPage from '@/app/training/page';
+import TrainingPage from '@/app/[lang]/training/page';
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -25,7 +25,7 @@ jest.mock('@/lib/supabase/server', () => ({
 }));
 
 // Mock the TrainingContent component
-jest.mock('@/app/training/training-content', () => ({
+jest.mock('@/app/[lang]/training/training-content', () => ({
   __esModule: true,
   default: function MockTrainingContent() {
     return <div data-testid="training-content">Mock Training Content</div>;

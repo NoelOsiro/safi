@@ -1,6 +1,14 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ErrorMessage } from "@/components/dassboard/ErrorMessage";
 
+// 👇 Mock window.location.reload since jsdom does not implement it
+beforeAll(() => {
+  Object.defineProperty(window, "location", {
+    configurable: true,
+    value: { ...window.location, reload: jest.fn() },
+  });
+});
+
 describe("ErrorMessage", () => {
   it("displays the error message", () => {
     const errorMessage = "An error occurred while loading data";
@@ -20,13 +28,13 @@ describe("ErrorMessage", () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
-  it("does not call onRetry when it is not provided", () => {
-    const onRetry = jest.fn();
+  it("calls window.location.reload when onRetry is not provided", () => {
+    const reloadSpy = jest.spyOn(window.location, "reload");
     render(<ErrorMessage message="Error" />);
     
     const retryButton = screen.getByRole("button", { name: /try again/i });
     fireEvent.click(retryButton);
     
-    expect(onRetry).not.toHaveBeenCalled();
+    expect(reloadSpy).toHaveBeenCalled();
   });
 });

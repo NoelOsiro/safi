@@ -25,18 +25,22 @@ const nextConfig = {
     ],
     unoptimized: true,
   },
-  webpack: (config, options) => {
-    config.plugins.push(
-      codecovNextJSWebpackPlugin({
-        enableBundleAnalysis: true,
-        bundleName: "example-nextjs-webpack-bundle",
-        uploadToken: process.env.CODECOV_TOKEN,
-        webpack: options.webpack,
-      }),
-    );
+  // webpack: (config, options) => {
+  //   config.plugins.push(
+  //     codecovNextJSWebpackPlugin({
+  //       enableBundleAnalysis: true,
+  //       bundleName: "example-nextjs-webpack-bundle",
+  //       uploadToken: process.env.CODECOV_TOKEN,
+  //       webpack: options.webpack,
+  //       telemetry: false,
+  //       options: {
+  //         telemetry: false,
+  //       },
+  //     }),
+  //   );
 
-    return config;
-  },
+  //   return config;
+  // },
 };
 
 export default nextConfig;

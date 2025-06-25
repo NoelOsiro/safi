@@ -1,0 +1,178 @@
+{
+    "landing": {
+        "hero": {
+            "title": "WinjoPro",
+            "tagline": "AI Coach for Food Safety in Kenya",
+            "subtitle": "Empowering communities through food safety and hygiene training.",
+            "button": "Get Started",
+            "description": "Smart training for safer food, from your kitchen to the community. Prepare for food safety certification through accessible, AI-assisted learning that speaks your language.",
+            "madeInKenya": "Made for Kenya with \u2764",
+            "startAITraining": "Start AI Training",
+            "watchDemo": "Watch Demo"
+        },
+        "stats": {
+            "title": "Trusted by Thousands",
+            "subtitle": "",
+            "vendorTrained": "Vendors Trained",
+            "countiesCovered": "Counties Covered",
+            "passRateIncrease": "Pass Rate Increase",
+            "languagesSupported": "Languages Supported"
+        },
+        "visual": {
+            "learnThroughVisualStories": "Learn Through Visual Stories",
+            "realKitchenScenariosAndVisualExamples": "Our AI coach uses real kitchen scenarios and visual examples to make food safety concepts easy to understand and remember.",
+            "interactivePhotoBasedLearning": "Interactive photo-based learning",
+            "realKitchenScenariosFromKenya": "Real kitchen scenarios from Kenya",
+            "stepByStepVisualGuides": "Step-by-step visual guides",
+            "realKitchenTrainingScenarios": "Real kitchen training scenarios"
+        },
+        "features": {
+            "title": "Powerful Features for Food Safety",
+            "subtitle": "Everything you need to master food safety and get certified, powered by AI",
+            "aiTitle": "AI Coach",
+            "interactiveModules": "Interactive Modules",
+            "smartAssessment": "Smart Assessment",
+            "certificationPrep": "Certification Prep",
+            "communitySupport": "Community Support",
+            "multiPlatformAccess": "Multi-Platform Access",
+            "aiDescription": "Chat-based assistant in Swahili, English & Sheng guiding you through training with personalized support",
+            "interactiveModulesDescription": "Short audio-visual courses covering hygiene, storage, and certification prep with hands-on activities",
+            "smartAssessmentDescription": "AI-powered photo analysis and quizzes to evaluate your kitchen and prepare for certification",
+            "certificationPrepDescription": "Mock tests and real inspection scenarios with performance tips to ensure you pass on the first try",
+            "communitySupportDescription": "Connect with trainers, NGOs, and health officers for ongoing support and group learning",
+            "multiPlatformAccessDescription": "Available on WhatsApp, web, and mobile app for maximum accessibility across all devices"
+        },
+        "testimonials": {
+      "title": "Success Stories",
+      "subtitle": "Hear from vendors who transformed their businesses with WinjoPro",
+      "testimonials": [
+        {
+          "name": "Mary Wanjiku",
+          "role": "Street Food Vendor, Nairobi",
+          "quote": "WinjoPro helped me understand food safety in Kiswahili. Now my customers trust my food more!",
+          "rating": 5,
+          "imageId": 7
+        },
+        {
+          "name": "John Kiprotich",
+          "role": "School Kitchen Manager, Eldoret",
+          "quote": "The AI coach made learning easy. We passed our health inspection on the first try!",
+          "rating": 5,
+          "imageId": 8
+        },
+        {
+          "name": "Grace Achieng",
+          "role": "Catering Business Owner, Kisumu",
+          "quote": "The photo assessment feature helped me identify problems I never noticed before.",
+          "rating": 5,
+          "imageId": 9
+        }
+      ]
+        },
+        "curriculum": {
+            "title": "Complete Training Curriculum",
+            "subtitle": "Five comprehensive modules designed specifically for Kenyan food vendors and kitchens",
+            "modules": [
+                {
+                    "title": "Introduction to Food Safety",
+                    "description": "Understanding food safety basics and why it matters for your business",
+                    "duration": "15 min",
+                    "level": "Beginner"
+                },
+                {
+                    "title": "Hygiene & Cleanliness",
+                    "description": "Personal hygiene practices and proper cleaning procedures",
+                    "duration": "20 min",
+                    "level": "Beginner"
+                },
+                {
+                    "title": "Food Handling & Storage",
+                    "description": "Safe storage temperatures and proper handling techniques",
+                    "duration": "25 min",
+                    "level": "Intermediate"
+                },
+                {
+                    "title": "Kitchen Setup & Safety",
+                    "description": "Optimal kitchen layout and waste management systems",
+                    "duration": "18 min",
+                    "level": "Intermediate"
+                },
+                {
+                    "title": "Certification Requirements",
+                    "description": "Documents needed and inspection preparation strategies",
+                    "duration": "22 min",
+                    "level": "Advanced"
+                }
+            ],
+            "levels": {
+                "beginner": "Beginner",
+                "intermediate": "Intermediate",
+                "advanced": "Advanced"
+            }
+        },
+        "cta": {
+            "title": "Get Started",
+            "subtitle": "Empowering communities through food safety and hygiene training.",
+            "startButton": "Start Training",
+            "assessmentButton": "Take Assessment"
+        },
+        "footer": {
+            "company": {
+                "name": "WinjoPro",
+                "description": "AI Coach for Food Safety in Kenya"
+            },
+            "platform": {
+                "title": "Platform",
+                "items": [
+                    {
+                        "label": "Home",
+                        "href": "/"
+                    },
+                    {
+                        "label": "About",
+                        "href": "/about"
+                    },
+                    {
+                        "label": "Contact",
+                        "href": "/contact"
+                    }
+                ]
+            },
+            "support": {
+                "title": "Support",
+                "items": [
+                    {
+                        "label": "Help Center",
+                        "href": "/help-center"
+                    },
+                    {
+                        "label": "FAQ",
+                        "href": "/faq"
+                    },
+                    {
+                        "label": "Contact Us",
+                        "href": "/contact"
+                    }
+                ]
+            },
+            "legal": {
+                "title": "Legal",
+                "items": [
+                    {
+                        "label": "Terms of Service",
+                        "href": "/terms"
+                    },
+                    {
+                        "label": "Privacy Policy",
+                        "href": "/privacy"
+                    },
+                    {
+                        "label": "Cookie Policy",
+                        "href": "/cookie"
+                    }
+                ]
+            },
+            "copyright": "© 2023 WinjoPro. All rights reserved."
+        }
+    }
+}

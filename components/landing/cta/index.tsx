@@ -1,16 +1,23 @@
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { MessageCircle, CheckCircle } from "lucide-react"
+import { Dictionary } from "@/app/dictionaries"
 
-export function CallToAction() {
+interface CallToActionProps {
+  dict: Dictionary
+}
+
+export function CallToAction({ dict }: CallToActionProps) {
+  const { title, subtitle, startButton, assessmentButton } = dict.landing.cta
+  
   return (
     <section className="py-20 px-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white relative overflow-hidden">
       <div className="absolute inset-0 bg-black/10"></div>
       <div className="container mx-auto text-center relative z-10">
         <div className="animate-fade-in-up">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to Transform Your Kitchen?</h2>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">{title}</h2>
           <p className="text-xl mb-12 opacity-90 max-w-2xl mx-auto leading-relaxed">
-            Join thousands of vendors and schools improving food safety across Kenya. Start your journey today!
+            {subtitle}
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <Button
@@ -21,18 +28,18 @@ export function CallToAction() {
             >
               <Link href="/auth/signup">
                 <MessageCircle className="mr-2 h-5 w-5" />
-                Start Free Training
+                {startButton}
               </Link>
             </Button>
             <Button
               asChild
               size="lg"
               variant="outline"
-              className="border-2 border-white text-white hover:bg-white hover:text-emerald-600 transition-all duration-300 transform hover:scale-105"
+              className="border-2 border-white text-emerald-700 hover:bg-emerald-50 hover:text-emerald-600 transition-all duration-300 transform hover:scale-105"
             >
               <Link href="/assessment">
                 <CheckCircle className="mr-2 h-5 w-5" />
-                Take Quick Assessment
+                {assessmentButton}
               </Link>
             </Button>
           </div>

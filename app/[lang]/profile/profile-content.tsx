@@ -2,7 +2,7 @@
 "use client"
 
 import { useState } from "react"
-import { ProfileForm } from "../../components/profile/ProfileForm"
+import { ProfileForm } from "../../../components/profile/ProfileForm"
 import { User } from "@/lib/types/user.types" // Make sure to import your User type
 
 interface ProfileContentProps {
