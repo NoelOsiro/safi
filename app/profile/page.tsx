@@ -1,7 +1,7 @@
 "use client";
 import type { ProfileFormData } from "@/lib/types/profile.types";
 import type { User } from "@/lib/types/user.types";
-import { createClient } from "@/lib/supabase/server";
+import { supabase } from "@/lib/supabase/client";
 import { redirect } from "next/navigation";
 import { ProfileContent } from "./profile-content";
 
@@ -50,7 +50,6 @@ const validateForm = (data: ProfileFormData) => {
 };
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
