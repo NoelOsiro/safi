@@ -2,46 +2,45 @@ name: Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
-    
+
     steps:
-      - uses: actions/checkout@v4
-      
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18.x'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm install
-      
-      - name: Install jest-junit
-        run: npm install --save-dev jest-junit # Add this step to install jest-junit
-      
-      - name: Run tests with coverage and JUnit report
-        run: JEST_JUNIT_OUTPUT_DIR=./test-results/ JEST_JUNIT_FILENAME=junit.xml JEST_JUNIT_CLASSNAME="{filepath}" npm run test:ci # Modified command
+
+      - name: Run tests with coverage
+        run: npm run test:ci
         env:
           CI: true
           NODE_ENV: test
           NEXT_PUBLIC_VERCEL_ENV: test
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'http://localhost:3000' }}
-      
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage/lcov.info
           fail_ci_if_error: true
-          verbose: true 
-      - name: Upload raw test results (optional, for debugging/archive)
+          verbose: true
+
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
