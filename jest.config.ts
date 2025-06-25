@@ -53,6 +53,14 @@ const customJestConfig: Config = {
   ],
   coverageDirectory: 'coverage',
   coverageProvider: 'v8',
+  coverageThreshold: {
+    global: {
+      branches: 80,  // Example: 80% branch coverage
+      functions: 80, // Example: 80% function coverage
+      lines: 80,     // Example: 80% line coverage
+      statements: 80 // Example: 80% statement coverage
+    }
+  }
 };
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
