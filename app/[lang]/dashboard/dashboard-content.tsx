@@ -51,11 +51,17 @@ export default function DashboardContent({
           completedModules={completedModules}
           totalModules={totalModules}
         />
+        <div className="flex justify-center mt-12">
+            <div className="w-full max-w-3xl">
+              <QuickActions />
+            </div>
+          </div>
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">Training Modules</h2>
             <Badge variant="secondary">{totalModules} Modules Available</Badge>
           </div>
+          
           <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {modules.map((module) => (
               <ModuleCard
@@ -65,11 +71,7 @@ export default function DashboardContent({
               />
             ))}
           </div>
-          <div className="flex justify-center mt-12">
-            <div className="w-full max-w-3xl">
-              <QuickActions />
-            </div>
-          </div>
+          
         </div>
       </div>
     </div>

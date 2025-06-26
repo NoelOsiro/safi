@@ -12,14 +12,16 @@ async function logout() {
   redirect("/login");
 }
 export async function Header() {
-   const supabase = await createClient()
-  const { data: { user }, error} = await supabase.auth.getUser()
+  const supabase = await createClient()
+   const {
+      data: { session },
+    } = await supabase.auth.getSession();
   return (
     <header className="border-b bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-3 animate-fade-in">
           <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-            <span className="text-white font-bold text-sm">MS</span>
+            <span className="text-white font-bold text-sm">WP</span>
           </div>
           <div>
             <h1 className="font-bold text-xl bg-gradient-to-r from-emerald-700 to-teal-700 bg-clip-text text-transparent">
@@ -41,20 +43,20 @@ export async function Header() {
           <Link href="/admin" className="text-slate-600 hover:text-emerald-600 transition-colors font-medium">
             Admin
           </Link>
-          {user ? (
+          {session ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
                       <AvatarImage
                         src={
-                          user.user_metadata?.avatar_url ||
-                          `https://api.dicebear.com/7.x/initials/svg?seed=${user.email}`
+                          session?.user.user_metadata?.avatar_url ||
+                          `https://api.dicebear.com/7.x/initials/svg?seed=${session.user.email}`
                         }
-                        alt={user.user_metadata?.name || user.email}
+                        alt={session.user.user_metadata?.name || session.user.email}
                       />
                       <AvatarFallback>
-                        {user.user_metadata?.name?.charAt(0).toUpperCase() || "U"}
+                        {session.user.user_metadata?.name?.charAt(0).toUpperCase() || "U"}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -63,9 +65,9 @@ export async function Header() {
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">
-                        {user.user_metadata?.name || user.email}
+                        {session.user.user_metadata?.name || session.user.email}
                       </p>
-                      <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                      <p className="text-xs leading-none text-muted-foreground">{session.user.email}</p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
