@@ -21,9 +21,11 @@ async function logout() {
 }
 export default async function SiteHeader() {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user }, error} = await supabase.auth.getUser()
+
+  if (error) {
+    return null;
+  }
   
 
   return (
