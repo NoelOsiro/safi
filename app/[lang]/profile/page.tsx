@@ -1,7 +1,7 @@
-"use client";
+
 import type { ProfileFormData } from "@/lib/types/profile.types";
 import type { User } from "@/lib/types/user.types";
-import { supabase } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ProfileContent } from "./profile-content";
 
@@ -19,37 +19,8 @@ export const getUserInitials = (name?: string, email?: string): string => {
   return email ? email[0].toUpperCase() : "U";
 };
 
-// Helper to safely get user data
-const getSafeUserData = (user: User | null) => ({
-  name: user?.name || "",
-  email: user?.email || "",
-  phone: user?.phone || "",
-  businessType: user?.businessType || "",
-  location: user?.location || "",
-  experience: user?.experience || "",
-});
-
-// Form validation function
-const validateForm = (data: ProfileFormData) => {
-  const errors: Partial<Record<keyof ProfileFormData, string>> = {};
-
-  if (!data.name?.trim()) {
-    errors.name = "Name is required";
-  }
-
-  if (!data.email?.trim()) {
-    errors.email = "Email is required";
-  } else if (!/\S+@\S+\.\S+/.test(data.email)) {
-    errors.email = "Email is invalid";
-  }
-
-  return {
-    isValid: Object.keys(errors).length === 0,
-    errors,
-  };
-};
-
 export default async function ProfilePage() {
+  const supabase = await createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();

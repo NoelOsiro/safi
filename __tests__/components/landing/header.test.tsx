@@ -35,6 +35,8 @@ jest.mock('@/lib/supabase/server', () => ({
 
 describe("Header", () => {
   it("renders the logo and navigation links", async() => {
+    // supress console.error here only
+    console.error = jest.fn()
     render(await Header());
 
     // Check logo and site title
@@ -42,7 +44,8 @@ describe("Header", () => {
     expect(screen.getByText("AI Coach for Food Safety")).toBeInTheDocument()
 
     // Check navigation links
-    expect(screen.getByText("Dashboard")).toBeInTheDocument()
+    const dashboardLinks = screen.getAllByText("Dashboard")
+    expect(dashboardLinks[0].closest("a")).toBeInTheDocument()
     expect(screen.getByText("Training")).toBeInTheDocument()
     expect(screen.getByText("Assessment")).toBeInTheDocument()
     expect(screen.getByText("Admin")).toBeInTheDocument()
@@ -51,8 +54,8 @@ describe("Header", () => {
   it("has correct links in the navigation", async() => {
     render(await Header());
 
-    const dashboardLink = screen.getByText("Dashboard").closest("a")
-    expect(dashboardLink).toHaveAttribute("href", "/dashboard")
+    const dashboardLinks = screen.getAllByText("Dashboard")
+    expect(dashboardLinks[0].closest("a")).toHaveAttribute("href", "/dashboard")
 
     const trainingLink = screen.getByText("Training").closest("a")
     expect(trainingLink).toHaveAttribute("href", "/training")
