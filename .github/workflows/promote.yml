@@ -27,7 +27,6 @@ jobs:
         with:
           token: ${{ secrets.PAT }}
           base: main
-          branch: develop
           title: "Promote develop to main"
           body: "Automated promotion after passing tests"
           labels: automerge
