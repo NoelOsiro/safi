@@ -40,3 +40,22 @@ export async function getUser() {
     return { user: null, error: error.message }
   }
 }
+
+export async function getSession() {
+  const supabase = await createClient()
+
+  try {
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession()
+
+    if (error) {
+      return { session: null, error: error.message }
+    }
+
+    return { session, error: null }
+  } catch (error: any) {
+    return { session: null, error: error.message }
+  }
+}

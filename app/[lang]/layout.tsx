@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import "../globals.css"
+import { Toaster } from "@/components/ui/sonner"
 
 export const metadata: Metadata = {
   title: "WinjoPro",
@@ -45,6 +46,7 @@ export default async function RootLayout({
     <html lang={(await params).lang} className="h-full">
       <body className="min-h-screen flex flex-col bg-gray-50">
         <main className="flex-1">{children}</main>
+        <Toaster position="top-center" expand={true} richColors closeButton />
       </body>
     </html>
   )

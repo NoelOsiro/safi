@@ -1,16 +1,24 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Suspense } from "react"
 import ChatClient from "./chat-client"
 
 export default async function ChatPage() {
-  const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  const { user, error: userError } = await getUser();
+  
+  if (!user || userError) {
+    redirect('/login')
+  }
 
-  if (!session) {
-    redirect("/login")
+  // Verify user is admin
+  const { data: userData } = await (await createClient())
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (!userData || userData.role !== 'admin') {
+    redirect('/')
   }
 
   const quickActions = [
@@ -20,9 +28,9 @@ export default async function ChatPage() {
     { text: "Start Module 1", action: "module1", icon: "▶️" },
   ]
   
-  const user = {
-    name: session.user?.user_metadata?.full_name || 'User',
-    email: session.user?.email || ''
+  const chatUser = {
+    name: user.user_metadata?.full_name || 'User',
+    email: user.email || ''
   }
 
   return (
@@ -33,8 +41,7 @@ export default async function ChatPage() {
     }>
       <ChatClient 
         quickActions={quickActions} 
-        user={user} 
-        session={session}
+        user={chatUser} 
       />
     </Suspense>
   )

@@ -56,6 +56,7 @@
     "fs": "latest",
     "immer": "latest",
     "input-otp": "latest",
+    "jwt-decode": "^4.0.0",
     "lucide-react": "^0.454.0",
     "middleware": "latest",
     "negotiator": "^1.0.0",

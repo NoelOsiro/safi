@@ -13,12 +13,11 @@ import type { Session } from "@supabase/supabase-js"
 interface ChatClientProps {
   quickActions: Array<{ text: string; action: string; icon: string }>
   user: { name: string; email: string }
-  session: Session
 }
 
-export default function ChatClient({ quickActions, user, session }: ChatClientProps) {
+export default function ChatClient({ quickActions, user }: ChatClientProps) {
   const [language, setLanguage] = useState("english")
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+  const { messages, input, handleInputChange, handleSubmit } = useChat({
     api: "/api/chat",
     initialMessages: [
       {
@@ -174,8 +173,8 @@ export default function ChatClient({ quickActions, user, session }: ChatClientPr
                   placeholder="Type your message..."
                   className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Sending...' : 'Send'}
+                <Button type="submit">
+                  Send
                 </Button>
               </form>
             </div>

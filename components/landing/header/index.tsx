@@ -1,19 +1,16 @@
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/server";
-import { Session } from "@supabase/supabase-js";
+import { createClient,getUser } from "@/lib/supabase/server";
+import { Session, User } from "@supabase/supabase-js";
 import Link from "next/link";
 import ProfileIcon from "./ProfileIcon";
 
 export async function Header() {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const { user } = await getUser();
   return (
     <header className="border-b bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         {renderLogo()}
-        {renderNav(session)}
+        {renderNav(user)}
       </div>
     </header>
   );
@@ -33,7 +30,7 @@ function renderLogo() {
   </div>;
 }
 
-function renderNav(session: Session | null) {
+function renderNav(user: User | null) {
   const links = [
     { label: "Dashboard", href: "/dashboard" },
     { label: "Training", href: "/training" },
@@ -52,8 +49,8 @@ function renderNav(session: Session | null) {
           {link.label}
         </Link>
       ))}
-      {session ? (
-        <ProfileIcon session={session} />
+      {user ? (
+        <ProfileIcon user={user} />
       ) : (
         renderSignInBtn()
       )}

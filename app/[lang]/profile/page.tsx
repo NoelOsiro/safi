@@ -1,7 +1,7 @@
 
 import type { ProfileFormData } from "@/lib/types/profile.types";
 import type { User } from "@/lib/types/user.types";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ProfileContent } from "./profile-content";
 
@@ -20,41 +20,38 @@ export const getUserInitials = (name?: string, email?: string): string => {
 };
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const { user } = await getUser();
 
-  if (!session) {
+  if (!user) {
     return redirect("/login"); // ⬅️ Important: stop execution
   }
 
   let profile = null;
   try {
-    const result = await supabase
+    const result = await (await createClient())
       .from("profiles")
       .select("*")
-      .eq("id", session.user.id)
+      .eq("id", user.id)
       .single();
     profile = result.data;
   } catch (error) {
     profile = {}; // fallback to empty
   }
 
-  const user = {
-    id: session.user.id,
-    email: session.user.email!,
+  const profileUser = {
+    id: user.id,
+    email: user.email!,
     name:
-      session.user.user_metadata?.name ||
-      session.user.user_metadata?.full_name ||
-      session.user.email!.split("@")[0],
+      user.user_metadata?.name ||
+      user.user_metadata?.full_name ||
+      user.email!.split("@")[0],
     fullName:
-      session.user.user_metadata?.full_name || session.user.user_metadata?.name,
+      user.user_metadata?.full_name || user.user_metadata?.name,
     avatar:
-      session.user.user_metadata?.avatar_url ||
-      session.user.user_metadata?.picture ||
+      user.user_metadata?.avatar_url ||
+      user.user_metadata?.picture ||
       `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
-        session.user.email!
+        user.email!
       )}`,
     phone: profile?.phone || "",
     businessType: profile?.business_type || "",
@@ -69,10 +66,10 @@ export default async function ProfilePage() {
       certificationReady: 0,
       studyTime: 0,
     },
-    created_at: session.user.created_at,
-    updated_at: session.user.updated_at,
-    email_verified: !!session.user.email_confirmed_at,
+    created_at: user.created_at,
+    updated_at: user.updated_at,
+    email_verified: !!user.email_confirmed_at,
   };
 
-  return <ProfileContent user={user} />;
+  return <ProfileContent user={profileUser} />;
 }

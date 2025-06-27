@@ -9,14 +9,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuItem,
 } from "@radix-ui/react-dropdown-menu";
-import { Session } from "@supabase/supabase-js";
-import { Link, User, Settings, LogOut } from "lucide-react";
+import { User } from "@supabase/supabase-js";
+import { Link, User as UserIcon, Settings, LogOut } from "lucide-react";
 
 interface Props {
-  session: Session;
+  user: User;
 }
 
-const ProfileIcon = ({ session }: Props) => {
+const ProfileIcon = ({ user }: Props) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -24,13 +24,13 @@ const ProfileIcon = ({ session }: Props) => {
           <Avatar className="h-8 w-8">
             <AvatarImage
               src={
-                session.user.user_metadata?.avatar_url ||
-                `https://api.dicebear.com/7.x/initials/svg?seed=${session.user.email}`
+                user.user_metadata?.avatar_url ||
+                `https://api.dicebear.com/7.x/initials/svg?seed=${user.email}`
               }
-              alt={session.user.user_metadata?.name || session.user.email}
+              alt={user.user_metadata?.name || user.email}
             />
             <AvatarFallback>
-              {session.user.user_metadata?.name?.charAt(0).toUpperCase() || "U"}
+              {user.user_metadata?.name?.charAt(0).toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -39,17 +39,17 @@ const ProfileIcon = ({ session }: Props) => {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {session.user.user_metadata?.name || session.user.email}
+              {user?.user_metadata?.name || user.email}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
-              {session.user.email}
+              {user.email}
             </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/profile" className="flex items-center">
-            <User className="mr-2 h-4 w-4" />
+            <UserIcon className="mr-2 h-4 w-4" />
             <span>Profile</span>
           </Link>
         </DropdownMenuItem>

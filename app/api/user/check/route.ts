@@ -1,15 +1,10 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
 export async function GET() {
   try {
-    const supabase = await createClient()
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession()
-
-    if (sessionError || !session?.user) {
+    const { user } = await getUser()
+    if (!user) {
       return NextResponse.json(
         {
           success: false,
@@ -21,19 +16,18 @@ export async function GET() {
       )
     }
 
-    // Get user profile
-    const { data: profile } = await supabase.from("profiles").select("*").eq("id", session.user.id).single()
+    const { data: profile } = await (await createClient()).from("profiles").select("*").eq("id", user.id).single()
 
-    const user = {
-      id: session.user.id,
-      email: session.user.email!,
+    const userData = {
+      id: user.id,
+      email: user.email!,
       name:
-        session.user.user_metadata.name || session.user.user_metadata.full_name || session.user.email!.split("@")[0],
-      fullName: session.user.user_metadata.full_name || session.user.user_metadata.name,
+        user.user_metadata.name || user.user_metadata.full_name || user.email!.split("@")[0],
+      fullName: user.user_metadata.full_name || user.user_metadata.name,
       avatar:
-        session.user.user_metadata.avatar_url ||
-        session.user.user_metadata.picture ||
-        `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(session.user.email!)}`,
+        user.user_metadata.avatar_url ||
+        user.user_metadata.picture ||
+        `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.email!)}`,
       phone: profile?.phone || "",
       businessType: profile?.business_type || "",
       location: profile?.location || "",
@@ -47,14 +41,14 @@ export async function GET() {
         certificationReady: 0,
         studyTime: 0,
       },
-      created_at: session.user.created_at,
-      updated_at: session.user.updated_at,
-      email_verified: !!session.user.email_confirmed_at,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+      email_verified: !!user.email_confirmed_at,
     }
 
     return NextResponse.json({
       success: true,
-      user,
+      user: userData,
       authenticated: true,
     })
   } catch (error: any) {
