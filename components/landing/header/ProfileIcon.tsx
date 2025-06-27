@@ -1,6 +1,6 @@
-import { logout } from "@/components/dassboard/WelcomeHeader";
+
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -8,10 +8,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuItem,
-} from "@radix-ui/react-dropdown-menu";
-import { User } from "@supabase/supabase-js";
-import { Link, User as UserIcon, Settings, LogOut } from "lucide-react";
+} from "@/components/ui/dropdown-menu";
 
+import { User } from "@supabase/supabase-js";
+import { User as UserIcon, Settings, LogOut } from "lucide-react";
+import { logout } from "@/app/actions/authActions";
+import Link from "next/link";
 interface Props {
   user: User;
 }
@@ -27,10 +29,10 @@ const ProfileIcon = ({ user }: Props) => {
                 user.user_metadata?.avatar_url ||
                 `https://api.dicebear.com/7.x/initials/svg?seed=${user.email}`
               }
-              alt={user.user_metadata?.name || user.email}
+              alt={user.user_metadata?.full_name || user.email}
             />
-            <AvatarFallback>
-              {user.user_metadata?.name?.charAt(0).toUpperCase() || "U"}
+            <AvatarFallback className="bg-gradient-to-r from-emerald-500 to-teal-400 text-2xl text-white">
+              {user.user_metadata?.full_name?.charAt(0).toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -39,7 +41,7 @@ const ProfileIcon = ({ user }: Props) => {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {user?.user_metadata?.name || user.email}
+              {user?.user_metadata?.full_name || user.email}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
@@ -47,22 +49,22 @@ const ProfileIcon = ({ user }: Props) => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/profile" className="flex items-center">
+        <DropdownMenuItem className="cursor-pointer hover:bg-gray-100 p-0">
+          <Link href="/profile" className="flex items-center w-full px-2 py-1.5 text-gray-900 hover:text-gray-900">
             <UserIcon className="mr-2 h-4 w-4" />
             <span>Profile</span>
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/dashboard" className="flex items-center">
+        <DropdownMenuItem className="cursor-pointer hover:bg-gray-100 p-0">
+          <Link href="/dashboard" className="flex items-center w-full px-2 py-1.5 text-gray-900 hover:text-gray-900">
             <Settings className="mr-2 h-4 w-4" />
             <span>Dashboard</span>
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <form method="post">
-            <button type="submit" formAction={logout as any} className="flex items-center w-full">
+        <DropdownMenuSeparator className="bg-gray-200" />
+        <DropdownMenuItem className="cursor-pointer hover:bg-gray-100 p-0">
+          <form method="post" className="w-full">
+            <button formAction={logout as any} type="submit" className="flex items-center w-full px-2 py-1.5 text-left text-gray-900 hover:text-gray-900">
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>
             </button>

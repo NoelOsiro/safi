@@ -13,17 +13,13 @@ import Link from "next/link";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { LogOut, Settings, User as UserIcon } from "lucide-react";
+import { logout } from "@/app/actions/authActions";
 interface WelcomeHeaderProps {
   user: User | null;
 }
 
 // ✅ Must be marked as a server action
-export async function logout() {
-  "use server"; // <-- required for server action
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect("/login");
-}
+
 
 export function WelcomeHeader({ user }: WelcomeHeaderProps) {
   return (
@@ -80,8 +76,8 @@ export function WelcomeHeader({ user }: WelcomeHeaderProps) {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <form action={logout} method="post">
-                <button type="submit" className="flex items-center w-full" data-testid="logout-button">
+              <form  method="post">
+                <button formAction={logout as any} type="submit" className="flex items-center w-full" data-testid="logout-button">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </button>
