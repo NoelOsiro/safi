@@ -1,35 +1,47 @@
-name: Promote to Main
+# .github/workflows/promote-to-main.yml
+name: Promote to Main (Auto PR + Auto Merge)
 
 on:
-  push:
-    branches:
-      - develop
+  workflow_run:
+    workflows: ["Tests"]
+    types:
+      - completed
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   promote:
-    if: github.ref == 'refs/heads/develop'
-    name: Promote if tests pass
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    name: Create and Auto-Merge PR from develop → main
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.PAT }}
+          base: main
+          branch: develop
+          title: "Promote develop to main"
+          body: "Automated promotion after passing tests"
+          labels: automerge
 
-      - name: Merge develop into main
-        run: |
-          git fetch --all
-          git checkout main
-          git branch --set-upstream-to=origin/main
-          git reset --hard origin/main
-          git merge origin/develop --no-ff -m "Auto-merge develop into main [skip ci]"
-          git push origin main
+      - name: Auto approve PR
+        if: steps.cpr.outputs.pull-request-operation == 'created'
+        run: gh pr review --approve "${{ steps.cpr.outputs.pull-request-number }}"
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.PAT }}
+
+      - name: Enable PR auto-merge
+        if: steps.cpr.outputs.pull-request-operation == 'created'
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.PAT }}
+          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+          merge-method: squash
