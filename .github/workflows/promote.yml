@@ -25,9 +25,11 @@ jobs:
 
       - name: Merge develop into main
         run: |
-          git fetch origin
+          git fetch --all
           git checkout main
-          git merge origin/develop --allow-unrelated-histories --no-ff -m "Auto-merge develop into main [skip ci]"
+          git branch --set-upstream-to=origin/main
+          git reset --hard origin/main
+          git merge origin/develop --no-ff -m "Auto-merge develop into main [skip ci]"
           git push origin main
         env:
           GITHUB_TOKEN: ${{ github.token }}
