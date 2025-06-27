@@ -85,7 +85,7 @@ export function ModuleCard({ module, href }: ModuleCardProps) {
                   </div>
                 </div>
               </div>
-              <div className="text-right sm:text-left">
+              <div className="text-right m-auto sm:text-left">
                 <div className="text-xl font-bold text-gray-900">
                   {module.progress ?? 0}%
                 </div>
@@ -98,8 +98,8 @@ export function ModuleCard({ module, href }: ModuleCardProps) {
           </Link>
         </CardHeader>
 
-        <CardContent className="p-6 pt-2">
-          <div className="flex flex-wrap gap-2 justify-start sm:justify-between">
+        <CardContent className="p-6 pt-2 mt-4">
+          <div className="flex flex-wrap gap-2 justify-center sm:justify-between">
             {module.status === "completed" && (
               <Button variant="outline" size="sm">
                 <BookOpen className="h-4 w-4 mr-2" />

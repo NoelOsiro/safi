@@ -1,6 +1,5 @@
 import type React from "react"
 import type { Metadata } from "next"
-import SiteHeader from "@/components/site-header"
 import "../globals.css"
 
 export const metadata: Metadata = {
@@ -34,7 +33,7 @@ export const metadata: Metadata = {
 export async function generateStaticParams() {
   return [{ lang: 'en' }, { lang: 'sw' }]
 }
- 
+
 export default async function RootLayout({
   children,
   params,
@@ -45,7 +44,6 @@ export default async function RootLayout({
   return (
     <html lang={(await params).lang} className="h-full">
       <body className="min-h-screen flex flex-col bg-gray-50">
-        <SiteHeader />
         <main className="flex-1">{children}</main>
       </body>
     </html>
