@@ -1,0 +1,20 @@
+[
+  {
+    "id": "doc1",
+    "title": "Return Policy for Shoes",
+    "text": "Our store accepts returns for shoes within 30 days with receipt. Items must be in original condition.",
+    "source": "store_policy"
+  },
+  {
+    "id": "doc2",
+    "title": "Shipping Information",
+    "text": "We offer free shipping over $50. Standard shipments take 3-5 business days.",
+    "source": "shipping"
+  },
+  {
+    "id": "doc3",
+    "title": "Payment Options",
+    "text": "We accept credit cards, PayLater and installment plans via our partner.",
+    "source": "payments"
+  }
+]
