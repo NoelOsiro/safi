@@ -19,6 +19,19 @@ Below is a concise breakdown of the main components we've added, what they do, a
     - `WorkflowState`: top-level state keys used by nodes (incoming `user`, `customer_profile` plus derived `behavior_summary`, `segment`, `segment_reason`, `segment_scores`, and downstream fields like `retrieved_docs`, `answer`, `final_response`).
   - Why: TypedDicts make it explicit what nodes expect and return, simplify testing, and make the pipeline easier to reason about.
 
+  Shared runtime state keys (common across nodes)
+
+  - `retrieval_context` (str): combined snippets from retrieval used to ground generation.
+  - `segment` (str or dict): auditable segment output (dict may include `segment_id`, `trigger_reason`, `segmenter_confidence`, `segmenter_version`, `rule_applied`, and optional `routing_hint`).
+  - `customer_profile` (dict): profile fields (tiers, preferred_category, preferred_brands).
+  - `behavior_summary` (dict): derived behavior signals used by segmentation and retrieval.
+  - `persona_signals` (dict, optional): persona-level hints passed between retrieval/offers/generation.
+  - `routing_hint` (str, optional): explicit routing shortcut; nodes may short-circuit based on this value.
+  - `offers_metadata` (dict, optional): offers node attaches explainable metadata (including `trace_id`) which is propagated to `generation_node.model_metadata`.
+  - `retrieved_docs` (list): documents returned by the retriever service (each doc contains `id`, `title`, `text`, `score`, and metadata).
+  - `answer` (str): final generated message produced by `generation_node`.
+  - `model_metadata` (dict): generation metadata (e.g., `model_used`, optional `trace_id`).
+
 - **Segmentation (retail-aware)** (`app/nodes/segmentation_node.py`)
   - Purpose: compute a compact RFM-like `behavior_summary` and map customers to a small, auditable set of segments such as `high_value`, `cart_abandoner`, `frequent_browser`, `recent_purchaser`, `one_time_buyer`, `churn_risk`, `new_user`, or `general`.
   - Key behavior:

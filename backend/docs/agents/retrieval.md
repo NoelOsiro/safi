@@ -8,6 +8,12 @@ Purpose
   - `retrieved_docs`: list of docs with `id, title, text, metadata`
   - `retrieval_context`: short snippets used for generation grounding
 
+State keys (used / produced)
+
+- Reads from state keys: `segment`, `customer_profile`, `behavior_summary`, and optional `persona_signals` to bias queries and re-ranking.
+- Produces / attaches to state: `retrieved_docs` (list of doc dicts) and `retrieval_context` (string) used by `generation_node` as grounding.
+- These keys are part of the shared `WorkflowState` used across the pipeline (see `app/state/workflow_state.py`).
+
 Core features
 
 - TF-IDF default ranking via `scikit-learn` with optional FAISS + sentence-transformers for embeddings.

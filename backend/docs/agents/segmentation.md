@@ -23,6 +23,12 @@ API / Contract
 
 - `SegmentationAgent.run(message_or_event)` — adapter that normalizes input and returns the same dict shape.
 
+State keys (produced / consumed)
+
+- The segmentation node writes a single `segment` key into the `WorkflowState`. This key is the auditable dict described above and may include `segment_id`, `trigger_reason`, `segmenter_confidence`, `segmenter_version`, `rule_applied`, and an optional `routing_hint`.
+- Downstream nodes (retrieval, offers, generation) read `segment` and `behavior_summary` and may also read `customer_profile` to tailor results and messages.
+- When present, `routing_hint` can be used by the `WorkflowGraph` to short-circuit routing to specialized nodes (for example, `offers`).
+
 Internal behavior
 
 - `_derive_behavior_summary(profile)` — extracts and normalizes signals. In addition to the original RFM fields, the agent now computes richer behavioral signals used by expanded segments:
