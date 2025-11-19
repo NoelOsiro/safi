@@ -51,6 +51,67 @@ class WorkflowGraph:
                 # ignore routing hint errors and fall back to edges
                 pass
 
+            # Fallback checks: if retrieval produced no candidates, route to a fallback retrieval
+            try:
+                if isinstance(payload, dict):
+                    # empty retrieved docs -> fallback_retrieval
+                    if payload.get("retrieved_docs") is not None and len(payload.get("retrieved_docs")) == 0:
+                        if "fallback_retrieval" in self.routing_hints and self.routing_hints["fallback_retrieval"] in self.nodes:
+                            current = self.routing_hints["fallback_retrieval"]
+                            continue
+                    # offers empty -> product_recommendation
+                    if payload.get("offers") is not None and len(payload.get("offers")) == 0:
+                        if "product_recommendation" in self.routing_hints and self.routing_hints["product_recommendation"] in self.nodes:
+                            current = self.routing_hints["product_recommendation"]
+                            continue
+                    # generation failed marker -> safe_summary
+                    if payload.get("generation_failed"):
+                        if "safe_summary" in self.routing_hints and self.routing_hints["safe_summary"] in self.nodes:
+                            current = self.routing_hints["safe_summary"]
+                            continue
+            except Exception:
+                # ignore fallback evaluation errors and continue to normal edges
+                pass
+
             next_nodes = [to_n for (f, to_n) in self.edges if f == current]
             current = next_nodes[0] if next_nodes else None
         return payload
+
+
+def build_default_graph() -> 'WorkflowGraph':
+    """Attempt to build a default workflow graph by wiring known nodes.
+
+    This function imports node modules if available and wires the common
+    path: segmentation -> retrieval -> offers -> generation. It also
+    registers a routing hint for `offers`.
+    """
+    g = WorkflowGraph()
+    try:
+        from app.nodes import segmentation_node
+        g.add_node("segmentation", segmentation_node.segmentation_node)
+    except Exception:
+        pass
+    try:
+        from app.nodes import retrieval_node
+        g.add_node("retrieval", retrieval_node.retrieval_node)
+    except Exception:
+        pass
+    try:
+        from app.nodes.offers_node import offers_node
+        g.add_node("offers", offers_node)
+        g.add_routing_hint("offers", "offers")
+    except Exception:
+        pass
+    try:
+        from app.nodes import generation_node
+        g.add_node("generation", generation_node.generation_node)
+    except Exception:
+        pass
+    # connect if nodes present
+    if "segmentation" in g.nodes and "retrieval" in g.nodes:
+        g.connect("segmentation", "retrieval")
+    if "retrieval" in g.nodes and "offers" in g.nodes:
+        g.connect("retrieval", "offers")
+    if "offers" in g.nodes and "generation" in g.nodes:
+        g.connect("offers", "generation")
+    return g

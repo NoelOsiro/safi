@@ -36,13 +36,16 @@ def _template_generate(state: Dict[str, Any]) -> str:
     tier = profile.get("tier") or profile.get("loyalty_tier") or "Bronze"
     pref = profile.get("preferred_category") or profile.get("preferred_category") or "your preferred category"
     ctx = state.get("retrieval_context") or ""
+    persona_signals = state.get("persona_signals") or {}
+    routing_hint = state.get("routing_hint") or (seg_raw.get("routing_hint") if isinstance(seg_raw, dict) else None)
 
     lines = []
-    # Consult SEGMENT_RULES for tone and required elements
-    rule = SEGMENT_RULES.get(seg, SEGMENT_RULES["general"])
-    tone = rule.get("tone")
+    # Consult SEGMENT_RULES for guidance (tone, length, must_include, cta)
+    rule = SEGMENT_RULES.get(seg, SEGMENT_RULES.get("general", {}))
+    tone = rule.get("tone") or "friendly"
     must_include = rule.get("must_include", [])
-    cta = rule.get("cta")
+    cta = rule.get("cta") or "Shop now"
+    preferred_length = rule.get("preferred_length") or 120
 
     if seg == "cart_abandoner":
         lines.append("We noticed you left items in your cart — here are quick ways to complete checkout and save:")
@@ -81,11 +84,12 @@ def _template_generate(state: Dict[str, Any]) -> str:
     # final CTA guided by persona cta
     lines.append(cta.capitalize() + ".")
 
-    # join and ensure under ~120 words
+    # join and ensure under preferred length (words)
     msg = " ".join(lines)
     words = msg.split()
-    if len(words) > 120:
-        msg = " ".join(words[:120]) + "..."
+    max_words = int(preferred_length) if isinstance(preferred_length, (int, float)) else 120
+    if len(words) > max_words:
+        msg = " ".join(words[:max_words]) + "..."
     return msg
 
 
@@ -192,6 +196,10 @@ def generation_node(state: WorkflowState) -> WorkflowState:
     preferred_category = profile.get("preferred_category") or profile.get("last_viewed_category") or ""
     behavior = state.get("behavior_summary") or {}
 
+    # Ensure persona signals and routing hint are defined for later use
+    persona_signals = state.get("persona_signals") or {}
+    routing_hint = state.get("routing_hint") or (segment.get("routing_hint") if isinstance(segment, dict) else None)
+
     behavior_lines = []
     if behavior:
         behavior_lines.append(f"views_last_7d={behavior.get('views_last_7d', 0)}")
@@ -215,6 +223,25 @@ Guidelines:
 - Adjust tone for segment (e.g., cart_abandoner -> checkout help + deals; frequent_browser -> comparisons; high_value -> VIP tone).
 - Mention preferred category when relevant; keep message helpful and short; add a clear CTA.
 """
+
+    # Augment prompt with explicit LLM guidance from SEGMENT_RULES when available
+    seg_rule = SEGMENT_RULES.get(segment.lower() if isinstance(segment, str) else (segment.get("segment_id") if isinstance(segment, dict) else "general"), {})
+    llm_tone = seg_rule.get("tone")
+    llm_length = seg_rule.get("preferred_length")
+    llm_cta = seg_rule.get("cta")
+    if llm_tone or llm_length or llm_cta or persona_signals:
+        guidance_lines = ["LLM_HINTS:"]
+        if llm_tone:
+            guidance_lines.append(f"- Tone: {llm_tone}")
+        if llm_length:
+            guidance_lines.append(f"- Target length (words): {llm_length}")
+        if llm_cta:
+            guidance_lines.append(f"- Prefer CTA: {llm_cta}")
+        if persona_signals:
+            guidance_lines.append(f"- Persona signals: {persona_signals}")
+        if routing_hint:
+            guidance_lines.append(f"- Routing hint: {routing_hint}")
+        prompt += "\n" + "\n".join(guidance_lines) + "\n"
 
     # Prefer an explicit model loader (tests patch this); otherwise try chat
     used_model = "template"
@@ -249,9 +276,25 @@ Guidelines:
                 "customer_profile": profile,
                 "retrieval_context": retrieval_context,
                 "behavior_summary": behavior,
+                "persona_signals": persona_signals,
+                "routing_hint": routing_hint,
             })
+
+    # attach trace_id from upstream offers if present for observability
+    trace_id = None
+    try:
+        if isinstance(state, dict):
+            offers_meta = state.get("offers_metadata")
+            if isinstance(offers_meta, dict) and offers_meta.get("trace_id"):
+                trace_id = offers_meta.get("trace_id")
+    except Exception:
+        trace_id = None
+
+    model_metadata = {"model_used": used_model}
+    if trace_id:
+        model_metadata["trace_id"] = trace_id
 
     return {
         "answer": answer,
-        "model_metadata": {"model_used": used_model},
+        "model_metadata": model_metadata,
     }
