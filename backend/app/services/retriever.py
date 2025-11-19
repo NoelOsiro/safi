@@ -1,15 +1,15 @@
 import json
 import os
+import importlib
 import logging
 from typing import List, Dict
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import linear_kernel
+import time
+import hashlib
 
-import numpy as np
-try:
-    from sentence_transformers import SentenceTransformer
-    import faiss
-    FAISS_AVAILABLE = True
-except Exception:
-    FAISS_AVAILABLE = False
+# avoid importing heavy native libraries at module import time; import lazily
+FAISS_AVAILABLE = False
 
 try:
     import requests
@@ -17,10 +17,6 @@ try:
 except Exception:
     REQUESTS_AVAILABLE = False
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import linear_kernel
-import time
-import hashlib
 
 
 # configure simple logging for startup messages; user can override via standard logging config
@@ -30,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 # Try to import analytics module from app.agents; if not available, fall back to None
-import importlib
+
 try:
     analytics = importlib.import_module("app.agents.analytics")
 except Exception:
@@ -139,6 +135,11 @@ class Retriever:
                 # Obtain embeddings (injected adapter preferred for testing)
                 # local import of numpy to avoid requiring it when TF-IDF only
                 import numpy as np
+                try:
+                    import faiss
+                except Exception:
+                    # If faiss isn't importable at runtime, trigger fallback
+                    raise RuntimeError("FAISS not available at runtime")
 
                 if self._github_models:
                     token = os.getenv("GITHUB_TOKEN")
@@ -154,6 +155,11 @@ class Retriever:
                         self.model = self._injected_model
                         emb = self.model.encode(self.corpus, convert_to_numpy=True, show_progress_bar=False)
                     else:
+                        # Import SentenceTransformer lazily to avoid requiring it at module import
+                        try:
+                            from sentence_transformers import SentenceTransformer
+                        except Exception:
+                            raise RuntimeError("sentence_transformers is not available")
                         self.model = SentenceTransformer(self.ft_model_name)
                         emb = self.model.encode(self.corpus, convert_to_numpy=True, show_progress_bar=False)
 
@@ -164,32 +170,29 @@ class Retriever:
                 faiss.normalize_L2(emb)
                 dim = emb.shape[1]
 
-                if FAISS_AVAILABLE:
-                    try:
-                        if self.faiss_index_type == "ivf":
-                            quantizer = faiss.IndexFlatIP(dim)
-                            index = faiss.IndexIVFFlat(quantizer, dim, self.faiss_nlist, faiss.METRIC_INNER_PRODUCT)
-                            index.train(emb)
-                            index.add(emb)
-                            self.index = index
-                        elif self.faiss_index_type == "hnsw":
-                            index = faiss.IndexHNSWFlat(dim, self.faiss_hnsw_m)
-                            try:
-                                index.hnsw.efConstruction = self.faiss_hnsw_ef_construction
-                            except Exception:
-                                # some FAISS builds expose attributes differently
-                                pass
-                            index.add(emb)
-                            self.index = index
-                        else:
-                            self.index = faiss.IndexFlatIP(dim)
-                            self.index.add(emb)
-                    except Exception:
-                        logger.exception("Failed to create configured FAISS index type '%s', falling back to IndexFlatIP", self.faiss_index_type)
+                try:
+                    if self.faiss_index_type == "ivf":
+                        quantizer = faiss.IndexFlatIP(dim)
+                        index = faiss.IndexIVFFlat(quantizer, dim, self.faiss_nlist, faiss.METRIC_INNER_PRODUCT)
+                        index.train(emb)
+                        index.add(emb)
+                        self.index = index
+                    elif self.faiss_index_type == "hnsw":
+                        index = faiss.IndexHNSWFlat(dim, self.faiss_hnsw_m)
+                        try:
+                            index.hnsw.efConstruction = self.faiss_hnsw_ef_construction
+                        except Exception:
+                            # some FAISS builds expose attributes differently
+                            pass
+                        index.add(emb)
+                        self.index = index
+                    else:
                         self.index = faiss.IndexFlatIP(dim)
                         self.index.add(emb)
-                else:
-                    raise RuntimeError("FAISS not available at runtime")
+                except Exception:
+                    logger.exception("Failed to create configured FAISS index type '%s', falling back to IndexFlatIP", self.faiss_index_type)
+                    self.index = faiss.IndexFlatIP(dim)
+                    self.index.add(emb)
 
                 self.embeddings = emb
 
@@ -221,7 +224,7 @@ class Retriever:
         else:
             self.tfidf_matrix = None
 
-    def _github_get_embeddings(self, texts: List[str]) -> np.ndarray:
+    def _github_get_embeddings(self, texts: List[str]):
         url = os.getenv("GITHUB_MODELS_EMBED_URL")
         if not url:
             url = f"https://api.github.com/models/{self.ft_model_name}/embeddings"
@@ -330,6 +333,13 @@ class Retriever:
                         candidate_indices = cosine_similarities.argsort()[::-1][: self.hybrid_prefilter_topk]
                     except Exception:
                         candidate_indices = None
+
+                # Local imports for numpy/faiss to avoid requiring them at module import time
+                try:
+                    import numpy as np
+                    import faiss
+                except Exception:
+                    raise RuntimeError("FAISS runtime components are not available")
 
                 if self._github_models:
                     if not REQUESTS_AVAILABLE or not os.getenv("GITHUB_TOKEN"):

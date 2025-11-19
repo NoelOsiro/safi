@@ -1,43 +1,74 @@
+import logging
+from typing import Dict, Any
 from langsmith import traceable
 from app.state.workflow_state import WorkflowState
+from app.agents.segmentation.segmentation_agent import _decide_segment, _derive_behavior_summary
 from ..agents.segmentation import SegmentationAgent
-import logging
+
+
+try:
+    from langsmith import traceable
+except Exception:
+    # no-op fallback so module imports in minimal dev envs
+    def traceable(func=None, **_kwargs):
+        if func is None:
+            def _decorator(f):
+                return f
+            return _decorator
+        return func
+
+
+
+logger = logging.getLogger("segmentation_node")
+logging.basicConfig(level=logging.INFO)
+
+
+def _safe_get(d: Dict[str, Any], key: str, default=0):
+    v = d.get(key, default)
+    try:
+        return float(v)
+    except Exception:
+        return default
+
+
+def _normalize_score(val: float, max_val: float = 1.0) -> float:
+    """Clamp and normalize to 0..1 scale. Avoid division by zero."""
+    if max_val <= 0:
+        return 0.0
+    return max(0.0, min(1.0, val / max_val))
+
 
 
 # Initialize your agent once (not on every node call)
 segmentation_agent = SegmentationAgent()
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger("segmentation_node")
+logging.basicConfig(level=logging.INFO)
 
 
 @traceable  # This makes node executions visible in LangSmith
 def segmentation_node(state: WorkflowState) -> WorkflowState:
     """
-    Node 1: User Intent Segmentation
-    - Takes the raw user input
-    - Uses segmentation agent to classify / segment intent
-    - Writes `segment` back into graph state (merging with existing state)
-    """
+    Retail segmentation node.
+    Inputs:
+      - state['customer_profile'] (preferred) containing behavior aggregates
+      - OR falls back to state['user'] for minimal info
+    Outputs:
+      - behavior_summary
+      - segment
+      - segment_reason
+      - segment_scores
+    """ 
+    profile = state.get("customer_profile") or {}
+    # If no aggregate fields in profile, try to extract lightweight metrics from user.history (not implemented)
+    behavior_summary = _derive_behavior_summary(profile)
 
-    # Safely extract user message (state is a dict-like TypedDict at runtime)
-    user = state.get("user") if isinstance(state, dict) else None
-    user_message = ""
-    if isinstance(user, dict):
-        user_message = user.get("message", "") or ""
+    segment, scores, reason = _decide_segment(behavior_summary, profile)
 
-    # Build a structured event using available signals from the state
-    event = {"text": user_message}
-    for key in ("event_name", "page_url", "step", "time_spent", "asset_name"):
-        if key in state:
-            event[key] = state[key]
+    _LOGGER.info("segmentation_node: user=%s -> segment=%s (%s) scores=%s", state.get("user", {}).get("id"), segment, reason, scores)
 
-    result = segmentation_agent.run(event)
-
-    # Log which rule was matched for workflow observability
-    rule = result.get("rule_applied")
-    seg_id = result.get("segment_id")
-    _LOGGER.info("Segmentation node matched rule=%s -> segment=%s", rule, seg_id)
-
-    # Merge the segment result back into the workflow state
-    new_state = dict(state)
-    new_state["segment"] = result
-    return new_state
+    return {
+        "behavior_summary": behavior_summary,
+        "segment": segment,
+        "segment_reason": reason,
+        "segment_scores": scores,
+    }
