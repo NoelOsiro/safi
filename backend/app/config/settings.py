@@ -107,4 +107,38 @@ else:
         RETRIEVER_USE_SEGMENT_RULE_BOOSTS: bool = True
 
 
-settings = Settings()
+import os
+
+# Sanitize environment values that are empty strings for complex-typed settings.
+# Pydantic attempts to `json.loads` env values for list/dict fields; an empty
+# string will raise JSONDecodeError. Remove any empty-string env entries so
+# the Settings defaults are used instead.
+for _k in ("SEGMENTER_PRODUCT_PATHS", "SEGMENTER_KEYWORDS"):
+    try:
+        v = os.environ.get(_k)
+        if v is not None and isinstance(v, str) and v.strip() == "":
+            del os.environ[_k]
+    except Exception:
+        # Be defensive; don't crash config loading for unexpected envs
+        pass
+
+try:
+    settings = Settings()
+except Exception as _exc:
+    # Defensive fallback: if environment parsing fails (common when an env
+    # variable is present but empty), construct a simple settings object using
+    # the class defaults so the app can continue running in development.
+    import logging
+    logging.getLogger(__name__).warning("Settings load failed (%s); using defaults", _exc)
+
+    class _FallbackSettings:
+        pass
+
+    settings = _FallbackSettings()
+    # copy uppercase attributes from the Settings class defaults
+    for _k, _v in getattr(Settings, "__dict__", {}).items():
+        if _k.isupper():
+            try:
+                setattr(settings, _k, _v)
+            except Exception:
+                pass

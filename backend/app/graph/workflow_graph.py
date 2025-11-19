@@ -107,6 +107,21 @@ def build_default_graph() -> 'WorkflowGraph':
         g.add_node("generation", generation_node.generation_node)
     except Exception:
         pass
+    try:
+        from app.nodes import safety_node
+        g.add_node("safety", safety_node.safety_node)
+    except Exception:
+        pass
+    try:
+        from app.nodes import hitl_node
+        g.add_node("hitl", hitl_node.hitl_node)
+    except Exception:
+        pass
+    try:
+        from app.nodes import delivery_node
+        g.add_node("delivery", delivery_node.delivery_node)
+    except Exception:
+        pass
     # connect if nodes present
     if "segmentation" in g.nodes and "retrieval" in g.nodes:
         g.connect("segmentation", "retrieval")
@@ -114,4 +129,11 @@ def build_default_graph() -> 'WorkflowGraph':
         g.connect("retrieval", "offers")
     if "offers" in g.nodes and "generation" in g.nodes:
         g.connect("offers", "generation")
+    if "generation" in g.nodes and "safety" in g.nodes:
+        g.connect("generation", "safety")
+    if "safety" in g.nodes and "hitl" in g.nodes:
+        g.connect("safety", "hitl")
+    if "hitl" in g.nodes and "delivery" in g.nodes:
+        g.connect("hitl", "delivery")
+    # delivery will be optionally added if implemented
     return g

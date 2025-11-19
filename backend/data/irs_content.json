@@ -1,0 +1,110 @@
+[
+  {
+    "id": "p1",
+    "title": "Acme Runner Shoe",
+    "text": "Acme Runner Shoe — lightweight, breathable, cushioned midsole. Perfect for daily runs and gym workouts. Now 30% off for a limited time.",
+    "source": "catalog",
+    "brand": "Acme",
+    "category": "footwear.running",
+    "price": 70,
+    "original_price": 100,
+    "discount": true,
+    "tags": ["running","lightweight","cushion"]
+  },
+  {
+    "id": "p2",
+    "title": "ValueCo Everyday Sneaker",
+    "text": "Affordable all-day sneaker with durable outsole and classic styling. Great value for casual wear.",
+    "source": "catalog",
+    "brand": "ValueCo",
+    "category": "footwear.casual",
+    "price": 45,
+    "original_price": 45,
+    "discount": false,
+    "tags": ["sneaker","casual","value"]
+  },
+  {
+    "id": "p3",
+    "title": "Acme Wireless Headphones",
+    "text": "Noise-cancelling wireless headphones with 30h battery life and fast charging. Includes in-line mic and voice assistant support. Limited-time bundle deal available.",
+    "source": "marketing",
+    "brand": "Acme",
+    "category": "electronics.audio",
+    "price": 129,
+    "original_price": 199,
+    "discount": true,
+    "tags": ["headphones","wireless","noise-cancelling"]
+  },
+  {
+    "id": "p4",
+    "title": "KitchenPro Blender 800W",
+    "text": "Powerful 800W blender for smoothies, soups, and sauces. Dishwasher-safe parts and 2-year warranty.",
+    "source": "catalog",
+    "brand": "KitchenPro",
+    "category": "home.kitchen.appliances",
+    "price": 89,
+    "original_price": 129,
+    "discount": true,
+    "tags": ["kitchen","blender","appliance"]
+  },
+  {
+    "id": "p5",
+    "title": "CozyHome Weighted Blanket 10lb",
+    "text": "10lb weighted blanket with breathable cover — calming warmth for restful sleep. Machine washable cover included.",
+    "source": "catalog",
+    "brand": "CozyHome",
+    "category": "home.bedding",
+    "price": 79,
+    "original_price": 99,
+    "discount": true,
+    "tags": ["blanket","sleep","home"]
+  },
+  {
+    "id": "p6",
+    "title": "BabySteps Stroller — Compact",
+    "text": "Lightweight compact stroller with one-hand fold, adjustable recline, and UPF canopy. Perfect for travel and city life.",
+    "source": "catalog",
+    "brand": "BabySteps",
+    "category": "baby.gear",
+    "price": 149,
+    "original_price": 179,
+    "discount": false,
+    "tags": ["stroller","baby","travel"]
+  },
+  {
+    "id": "p7",
+    "title": "Acme Trail Running Socks (3-pack)",
+    "text": "Moisture-wicking socks with reinforced heel and toe — 3-pack. Designed for trail running and long hikes.",
+    "source": "catalog",
+    "brand": "Acme",
+    "category": "accessories.socks",
+    "price": 18,
+    "original_price": 24,
+    "discount": true,
+    "tags": ["socks","running","accessory"]
+  },
+  {
+    "id": "p8",
+    "title": "OfficePro Ergonomic Chair",
+    "text": "Adjustable lumbar support, breathable mesh back, and tilt lock. Improve posture and comfort during long workdays.",
+    "source": "catalog",
+    "brand": "OfficePro",
+    "category": "furniture.office",
+    "price": 199,
+    "original_price": 249,
+    "discount": true,
+    "tags": ["office","chair","ergonomic"]
+  },
+  {
+    "id": "p9",
+    "title": "Acme Smartwatch Series 5",
+    "text": "Track workouts, heart rate, sleep, and notifications. Waterproof design with interchangeable bands. Special trade-in credit available.",
+    "source": "marketing",
+    "brand": "Acme",
+    "category": "electronics.wearables",
+    "price": 249,
+    "original_price": 299,
+    "discount": true,
+    "tags": ["smartwatch","wearable","fitness"]
+  }
+]

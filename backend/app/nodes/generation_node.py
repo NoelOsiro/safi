@@ -84,12 +84,41 @@ def _template_generate(state: Dict[str, Any]) -> str:
     # final CTA guided by persona cta
     lines.append(cta.capitalize() + ".")
 
-    # join and ensure under preferred length (words)
+    # join and ensure under preferred length (words). Guarantee CTA is present.
     msg = " ".join(lines)
     words = msg.split()
     max_words = int(preferred_length) if isinstance(preferred_length, (int, float)) else 120
+    cta_text = (cta.capitalize() + ".") if cta else ""
+
+    # Finalize message while enforcing preferred_length and guaranteeing CTA.
+    cta_words = cta_text.split() if cta_text else []
+
     if len(words) > max_words:
-        msg = " ".join(words[:max_words]) + "..."
+        truncated_words = words[:max_words]
+        # If CTA not present in truncated words, ensure CTA words occupy the end
+        if cta_words and (cta_text.rstrip('.') not in " ".join(truncated_words)):
+            if len(cta_words) >= max_words:
+                new_words = cta_words[:max_words]
+            else:
+                new_words = truncated_words[: max_words - len(cta_words)] + cta_words
+        else:
+            new_words = truncated_words
+        msg = " ".join(new_words)
+    else:
+        # Not truncated: ensure CTA present but do not exceed max_words
+        current_words = msg.split()
+        if cta_words and (cta_text.rstrip('.') not in msg):
+            if len(current_words) + len(cta_words) > max_words:
+                keep = max_words - len(cta_words)
+                if keep < 0:
+                    # CTA longer than max, truncate CTA to fit
+                    new_words = cta_words[:max_words]
+                else:
+                    new_words = current_words[:keep] + cta_words
+            else:
+                new_words = current_words + cta_words
+            msg = " ".join(new_words)
+
     return msg
 
 
@@ -294,7 +323,7 @@ Guidelines:
     if trace_id:
         model_metadata["trace_id"] = trace_id
 
-    return {
-        "answer": answer,
-        "model_metadata": model_metadata,
-    }
+    # Return merged state so upstream keys (e.g. `offers`) are preserved
+    out_state = dict(state) if isinstance(state, dict) else {}
+    out_state.update({"answer": answer, "model_metadata": model_metadata})
+    return out_state

@@ -49,6 +49,21 @@ def retrieval_node(state: WorkflowState) -> WorkflowState:
     elif isinstance(seg, str):
         query = seg
 
+    # If the segment is a controlled label (e.g. 'frequent_browser') it's
+    # often not useful as a raw TF-IDF query. Prefer the user's free-text
+    # message when the segment looks like a machine label (underscores or
+    # single-token identifiers) and a user message exists.
+    user = state.get("user") or {}
+    user_msg = (user.get("message") if isinstance(user, dict) else None) or ""
+    if isinstance(query, str) and user_msg:
+        is_label_like = ("_" in query) or (" " not in query and query.islower())
+        if is_label_like:
+            logger.info(
+                "retrieval_node: segment '%s' looks like a label; using user message for retrieval",
+                query,
+            )
+            query = user_msg
+
     if not query:
         user = state.get("user") or {}
         query = (user.get("message") if isinstance(user, dict) else None) or ""
@@ -125,6 +140,35 @@ def retrieval_node(state: WorkflowState) -> WorkflowState:
             ) or []
         except TypeError:
             docs = retriever.get_grounding_content(query, 3) or []
+        # If the retriever returned no results but has a loaded corpus, fall
+        # back to a lightweight substring/keyword match so smoke tests and
+        # dev runs still get grounding content. This keeps behavior predictable
+        # without forcing TF-IDF/FAISS changes.
+        if not docs:
+            try:
+                docs = []
+                q_terms = [t.lower() for t in query.replace("?", " ").split() if len(t) > 2]
+                if q_terms and getattr(retriever, "documents", None):
+                    for d in retriever.documents:
+                        title = (d.get("title") or "").lower()
+                        text = (d.get("text") or "").lower()
+                        category = (d.get("category") or "").lower()
+                        brand = (d.get("brand") or "").lower()
+                        tags = " ".join([t.lower() for t in (d.get("tags") or [])])
+                        combined = " ".join([title, text, category, brand, tags])
+                        score = 0
+                        for t in q_terms:
+                            # simple plural handling: match singular/plural
+                            variants = {t, t.rstrip('s')}
+                            if any(v in combined for v in variants):
+                                score += 1
+                        if score > 0:
+                            docs.append({"id": d.get("id"), "title": d.get("title"), "text": d.get("text"), "source": d.get("source"), "score": float(score)})
+                    # sort by score desc and limit to top_k
+                    docs = sorted(docs, key=lambda x: x.get("score", 0), reverse=True)[:3]
+            except Exception:
+                # keep silent; we'll return an empty list below
+                docs = docs or []
     except Exception as e:
         logger.exception("retrieval_node: retriever failed: %s", e)
         docs = []

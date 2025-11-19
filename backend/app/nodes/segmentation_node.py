@@ -44,6 +44,16 @@ segmentation_agent = SegmentationAgent()
 _LOGGER = logging.getLogger("segmentation_node")
 logging.basicConfig(level=logging.INFO)
 
+# Defensive: Some SegmentationAgent implementations may not expose a
+# `_get_routing_hint` helper; provide a safe fallback used by the node.
+if not hasattr(segmentation_agent, "_get_routing_hint"):
+    def _default_routing_hint(label: str):
+        return None
+    setattr(segmentation_agent, "_get_routing_hint", _default_routing_hint)
+
+# Segments that should automatically route to manual review
+HIGH_RISK_SEGMENTS = {"sensitive", "high_value", "legal_review"}
+
 
 @traceable  # This makes node executions visible in LangSmith
 def segmentation_node(state: WorkflowState) -> WorkflowState:
