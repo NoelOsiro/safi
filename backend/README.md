@@ -60,7 +60,6 @@ Below is a concise breakdown of the main components we've added, what they do, a
     - `tests/run_seg_test.py` — runs `segmentation_node` with a sample `customer_profile` and prints the resulting `behavior_summary` and `segment`.
     - `tests/run_retrieval_test.py` — runs `retrieval_node` with a sample state; demonstrates how the retriever behaves with and without a populated corpus.
 
-
 ## **Design decisions & notes**
 
 - Use TF-IDF (scikit-learn) as a portable default so CI/dev environments don't require FAISS or large model installs.

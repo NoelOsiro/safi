@@ -112,7 +112,7 @@ def _template_generate(state: Dict[str, Any]) -> str:
 
     # Ensure must-have elements are present for the persona
     for req in must_include:
-        if req.lower() == "discounts" and not any("%" in l or "off" in l.lower() or "deal" in l.lower() for l in lines):
+        if req.lower() == "discounts" and not any("%" in line or "off" in line.lower() or "deal" in line.lower() for line in lines):
             lines.append("P.S. We found discounts matching your interests — don't miss out!")
         elif req.lower() == "loyalty appreciation":
             lines.append("P.S. Thanks for being with us — enjoy this exclusive perk.")
