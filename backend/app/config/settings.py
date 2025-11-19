@@ -32,6 +32,35 @@ if BaseSettings is not None:
         SEGMENTER_VERSION: str = "1.1"
         SEGMENTER_PRODUCT_PATHS: List[str] = DEFAULT_PRODUCT_PATHS
         SEGMENTER_KEYWORDS: Dict[str, List[str]] = DEFAULT_SEGMENTER_KEYWORDS
+        # Segmentation thresholds (tunable)
+        SEGMENT_BASELINE_AOV: float = 100.0
+        SEGMENT_THRESHOLD_MONETARY_HIGH: float = 0.8
+        SEGMENT_THRESHOLD_FREQUENCY_HIGH: float = 0.6
+        SEGMENT_THRESHOLD_FREQUENCY_LOYAL: float = 0.7
+        SEGMENT_THRESHOLD_RECENCY_HIGH: float = 0.8
+        SEGMENT_THRESHOLD_ENGAGEMENT_POWER: float = 30.0
+        SEGMENT_THRESHOLD_PPS_POWER: float = 5.0
+        SEGMENT_THRESHOLD_CONV_NORM_POWER: float = 0.05
+        SEGMENT_THRESHOLD_DISCOUNT_VIEW_RATE: float = 0.4
+        SEGMENT_THRESHOLD_CART_ABANDON_BARGAIN: float = 0.3
+        SEGMENT_THRESHOLD_CART_ABANDONER_RATE: float = 0.6
+        SEGMENT_THRESHOLD_CART_EVENTS_FOR_ABANDON: int = 2
+        SEGMENT_THRESHOLD_VIEWS_FREQUENT: int = 20
+        SEGMENT_THRESHOLD_VIEWS_NEW: int = 2
+
+        # Confidence bands for rule-based segmentation
+        SEGMENT_CONFIDENCE_HIGH: float = 0.90
+        SEGMENT_CONFIDENCE_MID: float = 0.75
+        SEGMENT_CONFIDENCE_LOW: float = 0.60
+
+        # Retriever tuning knobs (diversity / novelty)
+        RETRIEVER_ENABLE_DIVERSITY_POSTPROCESSING: bool = True
+        RETRIEVER_ENABLE_NOVELTY_DEDUP: bool = True
+        RETRIEVER_MAX_PER_BRAND: int = 2
+        RETRIEVER_MAX_PER_CATEGORY: int = 2
+        RETRIEVER_NOVELTY_THRESHOLD: float = 0.8
+        # Allow toggling persona/segment boost behavior (fallback)
+        RETRIEVER_USE_SEGMENT_RULE_BOOSTS: bool = True
 
         class Config:
             # Allow environment variables with upper-case names by default
@@ -47,6 +76,35 @@ else:
         SEGMENTER_VERSION: str = "1.1"
         SEGMENTER_PRODUCT_PATHS: List[str] = DEFAULT_PRODUCT_PATHS
         SEGMENTER_KEYWORDS: Dict[str, List[str]] = DEFAULT_SEGMENTER_KEYWORDS
+        # Segmentation thresholds (tunable)
+        SEGMENT_BASELINE_AOV: float = 100.0
+        SEGMENT_THRESHOLD_MONETARY_HIGH: float = 0.8
+        SEGMENT_THRESHOLD_FREQUENCY_HIGH: float = 0.6
+        SEGMENT_THRESHOLD_FREQUENCY_LOYAL: float = 0.7
+        SEGMENT_THRESHOLD_RECENCY_HIGH: float = 0.8
+        SEGMENT_THRESHOLD_ENGAGEMENT_POWER: float = 30.0
+        SEGMENT_THRESHOLD_PPS_POWER: float = 5.0
+        SEGMENT_THRESHOLD_CONV_NORM_POWER: float = 0.05
+        SEGMENT_THRESHOLD_DISCOUNT_VIEW_RATE: float = 0.4
+        SEGMENT_THRESHOLD_CART_ABANDON_BARGAIN: float = 0.3
+        SEGMENT_THRESHOLD_CART_ABANDONER_RATE: float = 0.6
+        SEGMENT_THRESHOLD_CART_EVENTS_FOR_ABANDON: int = 2
+        SEGMENT_THRESHOLD_VIEWS_FREQUENT: int = 20
+        SEGMENT_THRESHOLD_VIEWS_NEW: int = 2
+
+        # Confidence bands for rule-based segmentation
+        SEGMENT_CONFIDENCE_HIGH: float = 0.90
+        SEGMENT_CONFIDENCE_MID: float = 0.75
+        SEGMENT_CONFIDENCE_LOW: float = 0.60
+
+        # Retriever tuning knobs (diversity / novelty)
+        RETRIEVER_ENABLE_DIVERSITY_POSTPROCESSING: bool = True
+        RETRIEVER_ENABLE_NOVELTY_DEDUP: bool = True
+        RETRIEVER_MAX_PER_BRAND: int = 2
+        RETRIEVER_MAX_PER_CATEGORY: int = 2
+        RETRIEVER_NOVELTY_THRESHOLD: float = 0.8
+        # Allow toggling persona/segment boost behavior (fallback)
+        RETRIEVER_USE_SEGMENT_RULE_BOOSTS: bool = True
 
 
 settings = Settings()

@@ -80,6 +80,35 @@ def _derive_behavior_summary(profile: Dict[str, Any]) -> Dict[str, Any]:
     bs["avg_order_value"] = aov
     bs["last_purchase_days_ago"] = last_purchase_days
 
+    # Additional derived signals to support new persona segments
+    # discount_view_rate: fraction of views that were on discount pages
+    discount_views = profile.get("discount_view_events") or profile.get("discount_views_last_30d") or 0
+    try:
+        discount_views = int(discount_views)
+    except Exception:
+        discount_views = 0
+    bs["discount_view_rate"] = float(discount_views) / max(views, 1)
+
+    # category affinity: how repetitive are categories in recent views
+    recent_categories = profile.get("categories_last_10_views") or []
+    try:
+        repeat_cat_ratio = len(set(recent_categories)) / max(len(recent_categories), 1)
+    except Exception:
+        repeat_cat_ratio = 0.0
+    # invert ratio so higher means more repetition of the same category (0..1)
+    bs["repeat_category_ratio"] = 1.0 - repeat_cat_ratio
+
+    # engagement score: simple additive heuristic combining views and cart events
+    bs["engagement_score"] = float(views + cart_events)
+
+    # pages_per_session if available (helps identify power users)
+    pps = profile.get("pages_per_session") or profile.get("pages_per_session_avg") or 0
+    try:
+        pps = float(pps)
+    except Exception:
+        pps = 0.0
+    bs["pages_per_session"] = pps
+
     # Derived rates
     conversion_rate = 0.0
     if views > 0:
@@ -102,6 +131,9 @@ def _derive_behavior_summary(profile: Dict[str, Any]) -> Dict[str, Any]:
     baseline_aov = 100.0
     bs["monetary_score"] = _normalize_score(aov, max_val=baseline_aov)
 
+    # Ensure conversion_rate is present as a normalized metric
+    bs["conversion_rate_norm"] = _normalize_score(bs.get("conversion_rate", 0.0), max_val=1.0)
+
     return bs
 
 
@@ -114,30 +146,52 @@ def _decide_segment(behavior: Dict[str, Any], profile: Dict[str, Any]) -> Tuple[
     views = behavior.get("views_last_7d", 0)
     cart_events = behavior.get("cart_events_last_7d", 0)
     purchases = behavior.get("purchases_last_30d", 0)
-    aov = behavior.get("avg_order_value", 0.0)
     cart_abandon_rate = behavior.get("cart_abandon_rate", 0.0)
     recency = behavior.get("recency_score", 0.0)
     frequency = behavior.get("frequency_score", 0.0)
     monetary = behavior.get("monetary_score", 0.0)
+    discount_view_rate = behavior.get("discount_view_rate", 0.0)
+    repeat_category_ratio = behavior.get("repeat_category_ratio", 0.0)
+    engagement_score = behavior.get("engagement_score", 0.0)
+    pages_per_session = behavior.get("pages_per_session", 0.0)
+    conversion_rate_norm = behavior.get("conversion_rate_norm", 0.0)
 
     scores = {
         "recency": float(recency),
         "frequency": float(frequency),
         "monetary": float(monetary),
         "cart_abandon_rate": float(cart_abandon_rate),
+        "discount_view_rate": float(discount_view_rate),
+        "repeat_category_ratio": float(repeat_category_ratio),
+        "engagement_score": float(engagement_score),
+        "pages_per_session": float(pages_per_session),
+        "conversion_rate_norm": float(conversion_rate_norm),
     }
 
     # Priority rules (ordered)
     # 1. High value customers (monetary + frequency high)
-    if monetary >= 0.8 and frequency >= 0.6:
+    if monetary >= settings.SEGMENT_THRESHOLD_MONETARY_HIGH and frequency >= settings.SEGMENT_THRESHOLD_FREQUENCY_HIGH:
         return "high_value", scores, "High avg order value and frequent purchases"
 
-    # 2. Cart abandoner
-    if cart_events >= 2 and cart_abandon_rate >= 0.6:
+    # 2. Loyalist: strong recency and frequency
+    if recency >= settings.SEGMENT_THRESHOLD_RECENCY_HIGH and frequency >= settings.SEGMENT_THRESHOLD_FREQUENCY_LOYAL:
+        return "loyalist", scores, "High repeat purchase activity with strong recency"
+
+    # 3. Power user: heavy engagement and deep sessions (relaxed conversion requirement)
+    if engagement_score >= settings.SEGMENT_THRESHOLD_ENGAGEMENT_POWER and pages_per_session >= settings.SEGMENT_THRESHOLD_PPS_POWER and conversion_rate_norm >= settings.SEGMENT_THRESHOLD_CONV_NORM_POWER:
+        return "power_user", scores, "High engagement and efficient conversion"
+
+    # Bargain Hunter: views focused on discounts and price-sensitive behavior
+    # Place before generic cart-abandoner so discount-focused behavior is captured
+    if discount_view_rate > settings.SEGMENT_THRESHOLD_DISCOUNT_VIEW_RATE and cart_abandon_rate > settings.SEGMENT_THRESHOLD_CART_ABANDON_BARGAIN:
+        return "bargain_hunter", scores, "Frequent discount page views with price-sensitive abandonment"
+
+    # Cart abandoner
+    if cart_events >= settings.SEGMENT_THRESHOLD_CART_EVENTS_FOR_ABANDON and cart_abandon_rate >= settings.SEGMENT_THRESHOLD_CART_ABANDONER_RATE:
         return "cart_abandoner", scores, "Multiple cart events with high abandon rate"
 
     # 3. Frequent browser (many views but low purchases)
-    if views >= 20 and purchases == 0:
+    if views >= settings.SEGMENT_THRESHOLD_VIEWS_FREQUENT and purchases == 0:
         return "frequent_browser", scores, "Many views but no purchases"
 
     # 4. Recent purchaser
@@ -154,7 +208,7 @@ def _decide_segment(behavior: Dict[str, Any], profile: Dict[str, Any]) -> Tuple[
         return "churn_risk", scores, "No recent purchases and long time since last purchase"
 
     # 7. New user (very low activity)
-    if views <= 2 and purchases == 0 and cart_events == 0:
+    if views <= settings.SEGMENT_THRESHOLD_VIEWS_NEW and purchases == 0 and cart_events == 0:
         return "new_user", scores, "Very little historical activity"
 
     # Default: general
@@ -167,6 +221,8 @@ def _build_output(segment_id: str, reason: str, confidence: float, rule_id: str)
         "segmenter_confidence": confidence,
         "segmenter_version": settings.SEGMENTER_VERSION,
         "rule_applied": rule_id,
+        # Optional routing hint to make LangGraph routing cheaper downstream
+        "routing_hint": _get_routing_hint(segment_id),
     }
     LOGGER.info("Segmentation matched: %s (%s) via %s", segment_id, reason, rule_id)
     return out
@@ -272,4 +328,36 @@ class SegmentationAgent:
         else:
             event = message_or_event
         return classify_customer_event(event)
+
+
+def _get_routing_hint(segment_id: str) -> str:
+    """Map canonical segment ids to lightweight routing pathway hints.
+
+    These hint keys are intentionally coarse-grained and stable. They
+    help the graph router short-circuit expensive routing logic when
+    available.
+    """
+    mapping = {
+        # High-value pathway
+        "high_value": "high_value_path",
+        "loyalist": "high_value_path",
+        "power_user": "high_value_path",
+
+        # Offer pathway
+        "cart_abandoner": "offer_path",
+        "bargain_hunter": "offer_path",
+
+        # Inspiration / browse
+        "frequent_browser": "inspiration_path",
+        "window_shopper": "inspiration_path",
+
+        # Reactivation / win-back
+        "churn_risk": "reactivation_path",
+        "dormant": "reactivation_path",
+
+        # Default
+        "general": "default_path",
+        "new_user": "default_path",
+    }
+    return mapping.get(segment_id, "default_path")
 

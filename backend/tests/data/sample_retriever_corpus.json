@@ -1,0 +1,5 @@
+[
+  {"id": "d1", "title": "Product A", "text": "common text", "brand": "BrandX", "category": "Shoes", "price": 150, "original_price": 150, "new_arrival": true},
+  {"id": "d2", "title": "Product B", "text": "common text", "brand": "BrandY", "category": "Shoes", "price": 50, "original_price": 100, "discount": 50, "new_arrival": false},
+  {"id": "d3", "title": "Product C", "text": "common text", "brand": "BrandZ", "category": "Accessories", "price": 80}
+]

@@ -3,6 +3,8 @@ import os
 import importlib
 import logging
 from typing import List, Dict
+from app.config.segment_rules import SEGMENT_RULES
+from app.config.settings import settings
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 import time
@@ -333,7 +335,14 @@ class Retriever:
         price_range: tuple | None = None,
         tags: List[str] | None = None,
         persona_signals: Dict | None = None,
-    ) -> List[Dict]:
+        segment_id: str | None = None,
+        explain: bool = False,
+        # optional per-request overrides for diversity tuning
+        max_per_brand: int | None = None,
+        max_per_category: int | None = None,
+        novelty_threshold: float | None = None,
+        enable_diversity: bool | None = None,
+    ) -> List[Dict] | Dict:
         """Return top_k most relevant snippets for the query.
 
         Optional filters:
@@ -345,7 +354,7 @@ class Retriever:
         Each returned item contains: id, title, text, source, score
         """
         if not query or not self.documents:
-            return []
+            return [] if not explain else {"retrieved_docs": [], "retrieval_context": [], "candidate_stats": {}}
 
         # Prepare observability record
         obs = {
@@ -480,9 +489,45 @@ class Retriever:
                             }
                         )
 
+                # Normalize base scores before applying boosts
+                results = self._normalize_scores(results)
+
                 # Apply persona-based re-ranking if requested
                 if persona_signals:
                     results = self._persona_rerank(results, persona_signals)
+
+                # Apply segment-aware boosts if requested (use rules from SEGMENT_RULES)
+                if segment_id:
+                    results = self._apply_segment_boost(results, segment_id, persona_signals)
+
+                # Resolve per-request diversity knobs (override settings if provided)
+                eff_enable_div = enable_diversity if enable_diversity is not None else settings.RETRIEVER_ENABLE_DIVERSITY_POSTPROCESSING
+                eff_max_brand = max_per_brand if max_per_brand is not None else settings.RETRIEVER_MAX_PER_BRAND
+                eff_max_cat = max_per_category if max_per_category is not None else settings.RETRIEVER_MAX_PER_CATEGORY
+                eff_novelty = novelty_threshold if novelty_threshold is not None else settings.RETRIEVER_NOVELTY_THRESHOLD
+                # Resolve settings_used (always build for reproducibility/telemetry)
+                settings_used = {
+                    "enable_diversity": bool(eff_enable_div),
+                    "enable_novelty_dedup": bool(settings.RETRIEVER_ENABLE_NOVELTY_DEDUP),
+                    "max_per_brand": eff_max_brand,
+                    "max_per_category": eff_max_cat,
+                    "novelty_threshold": eff_novelty,
+                    "segment_boosts_enabled": bool(settings.RETRIEVER_USE_SEGMENT_RULE_BOOSTS),
+                }
+
+                # Post-process for diversity/novelty if enabled
+                if eff_enable_div:
+                    results = self._diversity_postprocess(
+                        results,
+                        max_per_brand=eff_max_brand,
+                        max_per_category=eff_max_cat,
+                        novelty_threshold=eff_novelty,
+                        settings_used=settings_used,
+                    )
+
+                # Attach settings_used to observability for analytics and reproducibility
+                obs["settings_used"] = settings_used
+                obs["settings_used_str"] = self._format_settings_for_telemetry(settings_used)
 
                 obs["latency_ms"] = int((time.time() - start) * 1000)
                 obs["top_ids"] = [r.get("id") for r in results]
@@ -528,12 +573,42 @@ class Retriever:
                 }
             )
 
-        # Apply persona-based re-ranking if requested
+        # Normalize and apply persona/segment boosts
+        results = self._normalize_scores(results)
         if persona_signals:
             results = self._persona_rerank(results, persona_signals)
+        if segment_id:
+            results = self._apply_segment_boost(results, segment_id, persona_signals)
+
+        # Resolve per-request diversity knobs (override settings if provided)
+        eff_enable_div = enable_diversity if enable_diversity is not None else settings.RETRIEVER_ENABLE_DIVERSITY_POSTPROCESSING
+        eff_max_brand = max_per_brand if max_per_brand is not None else settings.RETRIEVER_MAX_PER_BRAND
+        eff_max_cat = max_per_category if max_per_category is not None else settings.RETRIEVER_MAX_PER_CATEGORY
+        eff_novelty = novelty_threshold if novelty_threshold is not None else settings.RETRIEVER_NOVELTY_THRESHOLD
+        # Resolve settings_used (always build for reproducibility/telemetry)
+        settings_used = {
+            "enable_diversity": bool(eff_enable_div),
+            "enable_novelty_dedup": bool(settings.RETRIEVER_ENABLE_NOVELTY_DEDUP),
+            "max_per_brand": eff_max_brand,
+            "max_per_category": eff_max_cat,
+            "novelty_threshold": eff_novelty,
+            "segment_boosts_enabled": bool(settings.RETRIEVER_USE_SEGMENT_RULE_BOOSTS),
+        }
+
+        if eff_enable_div:
+            results = self._diversity_postprocess(
+                results,
+                max_per_brand=eff_max_brand,
+                max_per_category=eff_max_cat,
+                novelty_threshold=eff_novelty,
+                settings_used=settings_used,
+            )
 
         # Persist observability for TF-IDF path as well
         obs["backend"] = obs.get("backend", "tfidf")
+        # attach settings used for telemetry/analytics
+        obs["settings_used"] = settings_used
+        obs["settings_used_str"] = self._format_settings_for_telemetry(settings_used)
         obs["latency_ms"] = int((time.time() - start) * 1000)
         obs["top_ids"] = [r.get("id") for r in results]
         self._last_query_observability = obs
@@ -542,11 +617,242 @@ class Retriever:
                 analytics.log_a_b_result(obs)
         except Exception:
             logger.exception("Failed to persist observability row via analytics.log_a_b_result")
+        # If explain mode requested, return richer structure for debugging
+        if explain:
+            retrieval_context = [ (r.get("text") or "")[:200] for r in results ]
+            candidate_stats = {"candidate_count": len(candidate_doc_indices) if candidate_doc_indices is not None else len(self.documents), "backend": obs.get("backend")}
+            return {"retrieved_docs": results, "retrieval_context": retrieval_context, "candidate_stats": candidate_stats}
         return results
+
+    def _normalize_scores(self, results: List[Dict]) -> List[Dict]:
+        """Normalize the base scores to 0..1 range (min-max) to make boosts comparable."""
+        if not results:
+            return results
+        scores = [float(r.get("score", 0.0)) for r in results]
+        lo = min(scores)
+        hi = max(scores)
+        if hi - lo <= 1e-9:
+            # all scores equal — map to 0.5
+            for r in results:
+                r["score"] = 0.5
+            return results
+        for r in results:
+            r["score"] = (float(r.get("score", 0.0)) - lo) / (hi - lo)
+        return results
+
+    def _apply_segment_boost(self, results: List[Dict], segment_id: str, persona_signals: Dict | None = None) -> List[Dict]:
+        """Apply lightweight segment-aware boosts.
+
+        The function returns documents with an optional `_segment_boosts` dict
+        inside an `explain` field when available. Boost magnitudes are small
+        (0..0.3) and intended to be tuned.
+        """
+        if not results:
+            return results
+
+        def segment_boost_for_doc(doc, seg, persona_signals_inner: Dict | None = None):
+            boost = 0.0
+            d = next((x for x in self.documents if x.get("id") == doc.get("id")), None)
+            if not d:
+                return boost, {}
+            reasons = {}
+            # Use SEGMENT_RULES to determine boosts where possible
+            seg_rule = SEGMENT_RULES.get(seg, {})
+
+            # 1) Priority-based small base boost (scaled and capped)
+            priority = seg_rule.get("priority")
+            if isinstance(priority, (int, float)):
+                base_boost = min(float(priority) / 40.0, 0.25)
+                if base_boost > 0:
+                    boost += base_boost
+                    reasons["priority"] = round(base_boost, 3)
+
+            # 2) product_focus: if the doc's category or tags match the product_focus string
+            product_focus = seg_rule.get("product_focus")
+            if product_focus:
+                try:
+                    cat = (d.get("category") or "").lower()
+                    tags = [t.lower() for t in (d.get("tags") or [])] if d.get("tags") else []
+                    if product_focus.lower() in cat or any(product_focus.lower() in t for t in tags):
+                        boost += 0.15
+                        reasons["product_focus"] = 0.15
+                except Exception:
+                    pass
+
+            # 3) must_include: if any required phrase appears in title or text
+            must_include = seg_rule.get("must_include") or []
+            if must_include and (d.get("title") or d.get("text")):
+                txt = f"{d.get('title','')} {d.get('text','')}".lower()
+                matched = 0
+                for phrase in must_include:
+                    try:
+                        if phrase.lower() in txt:
+                            matched += 1
+                            reasons.setdefault("must_include", 0)
+                            reasons["must_include"] += 0.08
+                    except Exception:
+                        continue
+                if matched:
+                    boost += min(0.08 * matched, 0.2)
+
+            # 4) persona_signals from SEGMENT_RULES: e.g., preferred_brands True -> use provided persona_signals to boost matching brands
+            seg_persona = seg_rule.get("persona_signals") or {}
+            if seg_persona and persona_signals_inner:
+                # If rule expects preferred_brands and persona_signals_inner provides brands, boost matches
+                if seg_persona.get("preferred_brands") and persona_signals_inner.get("brands"):
+                    brands = [b.lower() for b in persona_signals_inner.get("brands")]
+                    if d.get("brand") and d.get("brand").lower() in brands:
+                        boost += 0.2
+                        reasons["brand_match"] = 0.2
+
+            # 5) Fallback heuristics for classic segments (kept for compatibility)
+            if seg == "bargain_hunter":
+                if d.get("discount") or (d.get("original_price") and d.get("price") and float(d.get("price")) < float(d.get("original_price"))):
+                    boost += 0.1
+                    reasons.setdefault("discount_fallback", 0.0)
+                    reasons["discount_fallback"] += 0.1
+            if seg == "high_value":
+                try:
+                    price = float(d.get("price")) if d.get("price") is not None else 0.0
+                    if price >= 100:
+                        boost += 0.1
+                        reasons.setdefault("price_fallback", 0.0)
+                        reasons["price_fallback"] += 0.1
+                except Exception:
+                    pass
+                if d.get("new_arrival") or d.get("is_new"):
+                    boost += 0.05
+                    reasons.setdefault("new_arrival_fallback", 0.0)
+                    reasons["new_arrival_fallback"] += 0.05
+
+            if seg == "power_user":
+                if d.get("in_stock"):
+                    boost += 0.05
+                    reasons.setdefault("in_stock_fallback", 0.0)
+                    reasons["in_stock_fallback"] += 0.05
+
+            return boost, reasons
+
+        for r in results:
+            boost, reasons = segment_boost_for_doc(r, segment_id)
+            # attach explain info if requested downstream
+            if "explain" not in r:
+                r["explain"] = {"boosts": {}, "segment_boost": 0.0}
+            r["explain"]["segment_boost"] = boost
+            r["explain"]["boosts"].update(reasons)
+            r["score"] = float(r.get("score", 0.0)) + boost
+
+        results = sorted(results, key=lambda x: x.get("score", 0.0), reverse=True)
+        return results
+
+    def _diversity_postprocess(self, results: List[Dict], max_per_brand: int = 2, max_per_category: int = 2, novelty_threshold: float = 0.8, settings_used: Dict | None = None) -> List[Dict]:
+        """Post-process ranked results to enforce diversity and remove near-duplicates.
+
+        - Caps number of items per brand and per category
+        - Removes near-duplicate items based on simple Jaccard similarity
+        - Attaches `explain.post_processing` metadata to surviving docs and a summary
+        """
+        if not results:
+            return results
+
+        kept = []
+        removed_duplicates = []
+        brand_counts = {}
+        category_counts = {}
+
+        def text_tokens(s: str):
+            return set(w for w in (s or "").lower().split())
+
+        for r in results:
+            d = r
+            doc_id = d.get("id")
+            brand = (next((x.get("brand") for x in self.documents if x.get("id") == doc_id), None) or "").lower()
+            category = (next((x.get("category") for x in self.documents if x.get("id") == doc_id), None) or "").lower()
+
+            # brand cap
+            bcount = brand_counts.get(brand, 0)
+            if brand and bcount >= max_per_brand:
+                removed_duplicates.append(doc_id)
+                continue
+
+            # category cap
+            ccount = category_counts.get(category, 0)
+            if category and ccount >= max_per_category:
+                removed_duplicates.append(doc_id)
+                continue
+
+            # novelty: compare text tokens with already kept items; if very similar, drop
+            is_dup = False
+            toks = text_tokens(d.get("title") or "") | text_tokens(d.get("text") or "")
+            for kept_doc in kept:
+                kept_toks = text_tokens(kept_doc.get("title") or "") | text_tokens(kept_doc.get("text") or "")
+                if not toks or not kept_toks:
+                    continue
+                inter = toks.intersection(kept_toks)
+                jaccard = len(inter) / float(min(len(toks), len(kept_toks)))
+                if jaccard >= novelty_threshold:
+                    is_dup = True
+                    break
+            if is_dup:
+                removed_duplicates.append(doc_id)
+                continue
+
+            # Keep
+            kept.append(d)
+            brand_counts[brand] = brand_counts.get(brand, 0) + 1
+            category_counts[category] = category_counts.get(category, 0) + 1
+
+        # enrich explain fields for kept docs with post_processing summary
+        post_proc = {
+            "diversity_filter": True,
+            "removed_duplicates": removed_duplicates,
+            "brand_caps": brand_counts,
+            "category_caps": category_counts,
+        }
+
+        # Attach settings_used so downstream analytics can reproduce the exact
+        # retrieval configuration that produced these post-processing results.
+        post_proc["settings_used"] = settings_used or {
+            "enable_diversity": settings.RETRIEVER_ENABLE_DIVERSITY_POSTPROCESSING,
+            "enable_novelty_dedup": settings.RETRIEVER_ENABLE_NOVELTY_DEDUP,
+            "max_per_brand": max_per_brand,
+            "max_per_category": max_per_category,
+            "novelty_threshold": novelty_threshold,
+            "segment_boosts_enabled": settings.RETRIEVER_USE_SEGMENT_RULE_BOOSTS,
+        }
+
+        for k in kept:
+            if "explain" not in k:
+                k["explain"] = {"boosts": {}, "persona_boost": 0.0}
+            k["explain"]["post_processing"] = post_proc
+
+        return kept
 
     def get_last_observability(self):
         """Public getter for the last query observability record (or None)."""
         return self._last_query_observability
+
+
+    def _format_settings_for_telemetry(self, settings_used: Dict) -> str:
+        """Create a compact, telemetry-friendly string from the settings_used dict.
+
+        Produces a stable, sorted comma-separated `k=v` string where floats are
+        rounded to 3 decimal places. This helps downstream analytics ingest a
+        compact representation alongside the full dict.
+        """
+        if not settings_used:
+            return ""
+        parts = []
+        for k in sorted(settings_used.keys()):
+            v = settings_used[k]
+            try:
+                if isinstance(v, float):
+                    parts.append(f"{k}={v:.3f}")
+                else:
+                    parts.append(f"{k}={v}")
+            except Exception:
+                parts.append(f"{k}={str(v)}")
+        return ",".join(parts)
 
 
     def _persona_rerank(self, results: List[Dict], persona_signals: Dict) -> List[Dict]:
@@ -566,14 +872,17 @@ class Retriever:
 
         def score_boost(doc):
             boost = 0.0
+            reasons = {}
             d = next((x for x in self.documents if x.get("id") == doc.get("id")), None)
             if not d:
-                return boost
+                return boost, reasons
             # Brand match
             if brands and d.get("brand") and d.get("brand").lower() in brands:
+                reasons["brand"] = 0.25
                 boost += 0.25
             # Discount match: document has a 'discount' field or 'price' vs 'original_price'
             if wants_discount and (d.get("discount") or (d.get("original_price") and d.get("price") and float(d.get("price")) < float(d.get("original_price")))):
+                reasons["discount"] = 0.2
                 boost += 0.2
             # Recency: if doc has 'published_at' or 'last_updated'
             if recent_days and (d.get("published_at") or d.get("last_updated")):
@@ -584,15 +893,22 @@ class Retriever:
                     # Expect ISO format; best-effort parse
                     dt = datetime.fromisoformat(date_str)
                     if datetime.utcnow() - dt <= timedelta(days=int(recent_days)):
+                        reasons["recency"] = 0.15
                         boost += 0.15
                 except Exception:
                     pass
-            return boost
+            return boost, reasons
 
-        # Apply boosts and re-sort
+        # Apply boosts and attach explain info per doc
         for r in results:
-            r["_boost"] = score_boost(r)
-            r["score"] = float(r.get("score", 0.0)) + r["_boost"]
+            b, reasons = score_boost(r)
+            r["_boost"] = b
+            # ensure explain structure exists (merged later with segment explain)
+            if "explain" not in r:
+                r["explain"] = {"boosts": {}, "persona_boost": 0.0}
+            r["explain"]["persona_boost"] = b
+            r["explain"]["boosts"].update(reasons)
+            r["score"] = float(r.get("score", 0.0)) + b
 
         results = sorted(results, key=lambda x: x.get("score", 0.0), reverse=True)
         for r in results:

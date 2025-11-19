@@ -1,0 +1,7 @@
+[
+  {"id": "n1", "title": "Sneaker A", "text": "Sneaker A by BrandNike model 1", "brand": "BrandNike", "category": "Sneakers", "price": 120},
+  {"id": "n2", "title": "Sneaker B", "text": "Sneaker B by BrandNike model 2", "brand": "BrandNike", "category": "Sneakers", "price": 130},
+  {"id": "n3", "title": "Sneaker C", "text": "Sneaker C by BrandNike model 3", "brand": "BrandNike", "category": "Sneakers", "price": 110},
+  {"id": "n4", "title": "Running Shoe D", "text": "Running Shoe D by BrandAdidas", "brand": "BrandAdidas", "category": "Running", "price": 90},
+  {"id": "n5", "title": "Casual Shoe E", "text": "Casual Shoe E by BrandPuma", "brand": "BrandPuma", "category": "Casual", "price": 70}
+]

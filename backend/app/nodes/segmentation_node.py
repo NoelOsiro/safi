@@ -86,6 +86,7 @@ def segmentation_node(state: WorkflowState) -> WorkflowState:
                 "trigger_reason": reason,
                 "segmenter_confidence": max(scores.values()) if scores else 0.0,
                 "rule_applied": "rule_behavioral_fallback",
+                "routing_hint": segmentation_agent._get_routing_hint(label),
             }
     else:
         # No structured event — derive from aggregates
@@ -96,6 +97,7 @@ def segmentation_node(state: WorkflowState) -> WorkflowState:
             "trigger_reason": reason,
             "segmenter_confidence": max(scores.values()) if scores else 0.0,
             "rule_applied": "rule_behavioral",
+            "routing_hint": segmentation_agent._get_routing_hint(label),
         }
 
     _LOGGER.info("segmentation_node: user=%s -> segment=%s (%s) scores=%s", state.get("user", {}).get("id"), seg_obj.get("segment_id"), seg_obj.get("trigger_reason"), seg_obj)
