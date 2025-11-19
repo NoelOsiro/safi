@@ -1,0 +1,52 @@
+[{
+  "id": "doc1",
+  "title": "Acme Headphones - Discount",
+  "text": "Acme Noise-Cancelling Headphones on sale. Great sound for daily use.",
+  "category": "electronics",
+  "price": 79.99,
+  "original_price": 119.99,
+  "tags": ["headphones", "audio"],
+  "brand": "Acme",
+  "discount": 33,
+  "published_at": "2025-11-01T12:00:00",
+  "source": "catalog"
+},
+{
+  "id": "doc2",
+  "title": "Premium Studio Headphones",
+  "text": "Premium studio headphones for audiophiles. High fidelity and build quality.",
+  "category": "electronics",
+  "price": 299.99,
+  "original_price": 299.99,
+  "tags": ["headphones", "studio"],
+  "brand": "StudioPro",
+  "discount": 0,
+  "published_at": "2025-10-15T09:00:00",
+  "source": "catalog"
+},
+{
+  "id": "doc3",
+  "title": "Budget Bluetooth Speaker",
+  "text": "Portable Bluetooth speaker, compact and affordable.",
+  "category": "electronics",
+  "price": 29.99,
+  "original_price": 49.99,
+  "tags": ["speaker", "audio"],
+  "brand": "Soundie",
+  "discount": 40,
+  "published_at": "2025-09-20T08:00:00",
+  "source": "catalog"
+},
+{
+  "id": "doc4",
+  "title": "Ceramic Coffee Mug",
+  "text": "12oz ceramic mug, dishwasher safe. Perfect for your morning coffee.",
+  "category": "home",
+  "price": 9.99,
+  "original_price": 9.99,
+  "tags": ["kitchen", "mug"],
+  "brand": "HomeGoods",
+  "discount": 0,
+  "published_at": "2025-08-01T07:00:00",
+  "source": "catalog"
+}]

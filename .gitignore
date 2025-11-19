@@ -1,5 +1,6 @@
 # env
-/.env
+backend/.env
+.env
 .venv
 venv
 /venv/
@@ -11,6 +12,7 @@ __pycache__/
 *.py[cod]
 /*.py[cod]
 *$py.class
+.pytest_cache/
 
 # distribution / packaging
 .Python

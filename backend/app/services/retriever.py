@@ -107,6 +107,10 @@ class Retriever:
         self.embeddings = None
         self.vectorizer = None
         self.tfidf_matrix = None
+        # Inverted indexes for fast filtering
+        self.index_by_tag = {}
+        self.index_by_brand = {}
+        self.index_by_category = {}
         # Last query observability record (populated by get_grounding_content)
         self._last_query_observability = None
 
@@ -127,6 +131,24 @@ class Retriever:
     def _build_index(self):
         self._load_data()
         self.corpus = [d.get("text", "") for d in self.documents]
+        # Build inverted indexes for tags/brands/categories for efficient filtering
+        self.index_by_tag = {}
+        self.index_by_brand = {}
+        self.index_by_category = {}
+        for i, d in enumerate(self.documents):
+            # tags may be a list or comma-separated string
+            tags = d.get("tags") or []
+            if isinstance(tags, str):
+                tags = [t.strip() for t in tags.split(",") if t.strip()]
+            for t in tags:
+                key = str(t).lower()
+                self.index_by_tag.setdefault(key, set()).add(i)
+            brand = d.get("brand")
+            if brand:
+                self.index_by_brand.setdefault(str(brand).lower(), set()).add(i)
+            category = d.get("category")
+            if category:
+                self.index_by_category.setdefault(str(category).lower(), set()).add(i)
         if not any(self.corpus):
             logger.error("Corpus loaded is empty. Retrieval will produce no results.")
 
@@ -303,8 +325,22 @@ class Retriever:
 
         raise RuntimeError("Unable to parse embeddings from GitHub Models response")
 
-    def get_grounding_content(self, query: str, top_k: int = 3) -> List[Dict]:
+    def get_grounding_content(
+        self,
+        query: str,
+        top_k: int = 3,
+        category: str | None = None,
+        price_range: tuple | None = None,
+        tags: List[str] | None = None,
+        persona_signals: Dict | None = None,
+    ) -> List[Dict]:
         """Return top_k most relevant snippets for the query.
+
+        Optional filters:
+        - category: prefer docs in this product category
+        - price_range: tuple(min_price, max_price) to filter by numeric `price` field
+        - tags: list of tags to prefilter documents
+        - persona_signals: dict with optional keys `brands` (list), `wants_discount` (bool), `recent_days` (int)
 
         Each returned item contains: id, title, text, source, score
         """
@@ -320,6 +356,34 @@ class Retriever:
             "top_ids": [],
         }
 
+        # Apply simple prefiltering on the documents list based on provided filters
+        candidate_doc_indices = None
+        if category or price_range or tags:
+            candidate_doc_indices = []
+            for i, d in enumerate(self.documents):
+                keep = True
+                if category:
+                    doc_cat = (d.get("category") or d.get("tags") or "").lower()
+                    if category.lower() not in doc_cat:
+                        keep = False
+                if keep and price_range and d.get("price") is not None:
+                    try:
+                        p = float(d.get("price"))
+                        low, high = price_range
+                        if low is not None and p < low:
+                            keep = False
+                        if high is not None and p > high:
+                            keep = False
+                    except Exception:
+                        # if price parsing fails, exclude doc from price-filtered set
+                        keep = False
+                if keep and tags:
+                    doc_tags = [t.lower() for t in (d.get("tags") or [])]
+                    if not any(t.lower() in doc_tags for t in tags):
+                        keep = False
+                if keep:
+                    candidate_doc_indices.append(i)
+
         if self._use_faiss and hasattr(self, "index") and self.index is not None:
             obs["backend"] = "faiss"
             start = time.time()
@@ -333,6 +397,14 @@ class Retriever:
                         candidate_indices = cosine_similarities.argsort()[::-1][: self.hybrid_prefilter_topk]
                     except Exception:
                         candidate_indices = None
+
+                # If we have explicit candidate_doc_indices from filters, intersect
+                if candidate_doc_indices is not None:
+                    if candidate_indices is not None:
+                        # intersect and preserve order from candidate_indices
+                        candidate_indices = [ci for ci in candidate_indices if ci in candidate_doc_indices]
+                    else:
+                        candidate_indices = candidate_doc_indices
 
                 # Local imports for numpy/faiss to avoid requiring them at module import time
                 try:
@@ -408,6 +480,10 @@ class Retriever:
                             }
                         )
 
+                # Apply persona-based re-ranking if requested
+                if persona_signals:
+                    results = self._persona_rerank(results, persona_signals)
+
                 obs["latency_ms"] = int((time.time() - start) * 1000)
                 obs["top_ids"] = [r.get("id") for r in results]
                 self._last_query_observability = obs
@@ -429,7 +505,15 @@ class Retriever:
         start = time.time()
         q_vec = self.vectorizer.transform([query])
         cosine_similarities = linear_kernel(q_vec, self.tfidf_matrix).flatten()
-        top_indices = cosine_similarities.argsort()[::-1][:top_k]
+
+        # If filters produced candidate_doc_indices, restrict ranking to that set
+        if candidate_doc_indices is not None:
+            # Sort only the candidate docs by their cosine similarity
+            cand = list(candidate_doc_indices)
+            cand_sorted = sorted(cand, key=lambda i: float(cosine_similarities[int(i)]), reverse=True)
+            top_indices = cand_sorted[:top_k]
+        else:
+            top_indices = cosine_similarities.argsort()[::-1][:top_k]
 
         results = []
         for idx in top_indices:
@@ -443,6 +527,10 @@ class Retriever:
                     "score": float(cosine_similarities[int(idx)]),
                 }
             )
+
+        # Apply persona-based re-ranking if requested
+        if persona_signals:
+            results = self._persona_rerank(results, persona_signals)
 
         # Persist observability for TF-IDF path as well
         obs["backend"] = obs.get("backend", "tfidf")
@@ -459,6 +547,57 @@ class Retriever:
     def get_last_observability(self):
         """Public getter for the last query observability record (or None)."""
         return self._last_query_observability
+
+
+    def _persona_rerank(self, results: List[Dict], persona_signals: Dict) -> List[Dict]:
+        """Lightweight re-ranker that boosts documents matching persona signals.
+
+        persona_signals may include:
+        - 'brands': list of preferred brands
+        - 'wants_discount': bool
+        - 'recent_days': int - prefer recently published docs
+        """
+        if not results:
+            return results
+
+        brands = [b.lower() for b in persona_signals.get("brands", [])] if persona_signals.get("brands") else []
+        wants_discount = bool(persona_signals.get("wants_discount"))
+        recent_days = persona_signals.get("recent_days")
+
+        def score_boost(doc):
+            boost = 0.0
+            d = next((x for x in self.documents if x.get("id") == doc.get("id")), None)
+            if not d:
+                return boost
+            # Brand match
+            if brands and d.get("brand") and d.get("brand").lower() in brands:
+                boost += 0.25
+            # Discount match: document has a 'discount' field or 'price' vs 'original_price'
+            if wants_discount and (d.get("discount") or (d.get("original_price") and d.get("price") and float(d.get("price")) < float(d.get("original_price")))):
+                boost += 0.2
+            # Recency: if doc has 'published_at' or 'last_updated'
+            if recent_days and (d.get("published_at") or d.get("last_updated")):
+                try:
+                    from datetime import datetime, timedelta
+
+                    date_str = d.get("published_at") or d.get("last_updated")
+                    # Expect ISO format; best-effort parse
+                    dt = datetime.fromisoformat(date_str)
+                    if datetime.utcnow() - dt <= timedelta(days=int(recent_days)):
+                        boost += 0.15
+                except Exception:
+                    pass
+            return boost
+
+        # Apply boosts and re-sort
+        for r in results:
+            r["_boost"] = score_boost(r)
+            r["score"] = float(r.get("score", 0.0)) + r["_boost"]
+
+        results = sorted(results, key=lambda x: x.get("score", 0.0), reverse=True)
+        for r in results:
+            r.pop("_boost", None)
+        return results
 
 
 

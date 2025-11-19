@@ -85,6 +85,21 @@ Both tests run without FAISS or large model installs; retrieval will show warnin
 
 ## **Next recommended steps**
 
+## Segment Rules
+
+The pipeline uses a shared `SEGMENT_RULES` mapping to steer generation and
+retrieval based on behavior-driven personas. The canonical definition lives in
+`app/config/segment_rules.py` and includes keys such as:
+
+- `tone`: friendly description of tone for the persona
+- `must_include`: required message elements (e.g., `discounts`, `loyalty appreciation`)
+- `product_focus`: helps retrieval decide which product sets to prioritize
+- `cta`: suggested call-to-action
+
+To extend or add a new persona, update `app/config/segment_rules.py` with a
+new entry. Nodes like `generation_node` and `retrieval_node` import this
+module to apply persona rules consistently across the graph.
+
 - Implement the `generation_node` to produce persona- and segment-aware responses (tone, offers, product mentions). (I can implement this next.)
 - Add unit tests for multiple segmentation scenarios and tuning thresholds.
 - (Optional) Add CI: GitHub Actions workflow to run tests on push/PR using a light Python matrix.
