@@ -80,7 +80,7 @@ def retrieval_node(state: WorkflowState) -> WorkflowState:
 
     # Build a concatenated context for generation (join texts with separation)
     context_texts = [str(d.get("text", "")) for d in normalized if d.get("text")]
-    context = "\n\n".join(context_texts)
+    retrieval_context = "\n\n".join(context_texts)
 
     # Log retrieval result for observability
     rule = seg.get("rule_applied") if isinstance(seg, dict) else seg
@@ -88,5 +88,5 @@ def retrieval_node(state: WorkflowState) -> WorkflowState:
 
     new_state = dict(state)
     new_state["retrieved_docs"] = normalized
-    new_state["context"] = context
+    new_state["retrieval_context"] = retrieval_context
     return new_state

@@ -52,8 +52,8 @@ def router_node(state: WorkflowState) -> Dict[str, Any]:
     if not state.get("segment"):
         return {"next_node": NODE_SEGMENTATION}
 
-    # 2️⃣ If we have a segment but no retrieved docs → retrieval
-    if "retrieved_docs" not in state or not state.get("retrieved_docs"):
+    # 2️⃣ If we have a segment but retrieval has not been performed yet → retrieval
+    if "retrieved_docs" not in state:
         return {"next_node": NODE_RETRIEVAL}
 
     # 3️⃣ If retrieval exists but no answer yet → generation
@@ -64,8 +64,12 @@ def router_node(state: WorkflowState) -> Dict[str, Any]:
     if "safety_metadata" not in state:
         return {"next_node": NODE_SAFETY}
 
-    # 5️⃣ If answer and safety metadata exist → response node (final formatting / delivery)
-    return {"next_node": NODE_RESPONSE}
+    # 5️⃣ If answer and safety metadata exist and we haven't formatted final_response yet → response node
+    if "final_response" not in state:
+        return {"next_node": NODE_RESPONSE}
+
+    # If final response already present, end the workflow
+    return {"next_node": None, "skip_reason": "done"}
 
 
 # ---------------------------------------------------------

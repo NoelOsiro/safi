@@ -59,16 +59,60 @@ def segmentation_node(state: WorkflowState) -> WorkflowState:
       - segment_scores
     """ 
     profile = state.get("customer_profile") or {}
-    # If no aggregate fields in profile, try to extract lightweight metrics from user.history (not implemented)
-    behavior_summary = _derive_behavior_summary(profile)
 
-    segment, scores, reason = _decide_segment(behavior_summary, profile)
+    # If structured event info or a short user message is present, prefer the
+    # auditable rule-based agent so we can expose the `rule_applied` key.
+    event_present = any(k in state for k in ("event_name", "page_url", "step", "text")) or (
+        isinstance(state.get("user"), dict) and bool(state.get("user", {}).get("message"))
+    )
 
-    _LOGGER.info("segmentation_node: user=%s -> segment=%s (%s) scores=%s", state.get("user", {}).get("id"), segment, reason, scores)
+    if event_present:
+        event = {
+            "event_name": state.get("event_name"),
+            "page_url": state.get("page_url"),
+            "step": state.get("step"),
+            "text": (state.get("user") or {}).get("message") if isinstance(state.get("user"), dict) else None,
+        }
+        try:
+            seg_obj = segmentation_agent.run(event)
+            # segmentation_agent.run returns an auditable dict with keys like
+            # 'segment_id', 'trigger_reason', 'segmenter_confidence', 'rule_applied'
+        except Exception:
+            # Fallback to behavior-derived segment if agent fails
+            behavior_summary = _derive_behavior_summary(profile)
+            label, scores, reason = _decide_segment(behavior_summary, profile)
+            seg_obj = {
+                "segment_id": label,
+                "trigger_reason": reason,
+                "segmenter_confidence": max(scores.values()) if scores else 0.0,
+                "rule_applied": "rule_behavioral_fallback",
+            }
+    else:
+        # No structured event — derive from aggregates
+        behavior_summary = _derive_behavior_summary(profile)
+        label, scores, reason = _decide_segment(behavior_summary, profile)
+        seg_obj = {
+            "segment_id": label,
+            "trigger_reason": reason,
+            "segmenter_confidence": max(scores.values()) if scores else 0.0,
+            "rule_applied": "rule_behavioral",
+        }
+
+    _LOGGER.info("segmentation_node: user=%s -> segment=%s (%s) scores=%s", state.get("user", {}).get("id"), seg_obj.get("segment_id"), seg_obj.get("trigger_reason"), seg_obj)
+
+    # Ensure behavior_summary and segment_scores are present for downstream nodes
+    if "behavior_summary" not in locals():
+        behavior_summary = _derive_behavior_summary(profile)
+    # Attempt to reuse 'scores' from _decide_segment when available
+    try:
+        segment_scores = scores
+    except NameError:
+        # If we invoked the segmentation agent, we may not have `scores` — synthesize minimal scores
+        segment_scores = {"recency": 0.0, "frequency": 0.0, "monetary": 0.0}
 
     return {
         "behavior_summary": behavior_summary,
-        "segment": segment,
-        "segment_reason": reason,
-        "segment_scores": scores,
+        "segment": seg_obj,
+        "segment_reason": seg_obj.get("trigger_reason"),
+        "segment_scores": segment_scores,
     }
